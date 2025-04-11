@@ -20,6 +20,9 @@ sqlstat_metrics AS (
         'SQLSTAT' AS source,
         NULL AS module,
         NULL AS username,
+        MIN(snap.begin_interval_time) AS start_time,
+        MAX(snap.end_interval_time) AS end_time,
+        ROUND((MAX(snap.end_interval_time) - MIN(snap.begin_interval_time)) * 1440, 2) AS runtime_minutes,
         SUM(ss.executions_delta) AS total_execs,
         ROUND(SUM(ss.elapsed_time_delta)/1e6, 2) AS total_elapsed_secs,
         ROUND(SUM(ss.cpu_time_delta)/1e6, 2) AS total_cpu_secs,
@@ -29,37 +32,41 @@ sqlstat_metrics AS (
         ROUND(SUM(ss.cpu_time_delta) / NULLIF(SUM(ss.executions_delta), 0) / 1e6, 2) AS avg_cpu_secs,
         NULL AS ash_samples
     FROM dba_hist_sqlstat ss
+    JOIN dba_hist_snapshot snap ON ss.snap_id = snap.snap_id AND ss.instance_number = snap.instance_number
     WHERE ss.sql_id IN (SELECT sql_id FROM changed_sqls)
     GROUP BY ss.sql_id, ss.plan_hash_value
 ),
 top_modules AS (
     SELECT 
         ash.sql_id,
-        ash.plan_hash_value,
+        ash.sql_plan_hash_value,
         ash.module,
         COUNT(*) AS usage_count,
-        RANK() OVER (PARTITION BY ash.sql_id, ash.plan_hash_value ORDER BY COUNT(*) DESC) AS rnk
+        RANK() OVER (PARTITION BY ash.sql_id, ash.sql_plan_hash_value ORDER BY COUNT(*) DESC) AS rnk
     FROM dba_hist_active_sess_history ash
-    WHERE ash.sample_time > SYSDATE - INTERVAL '6' HOUR
-      AND ash.sql_id IN (SELECT sql_id FROM changed_sqls)
-    GROUP BY ash.sql_id, ash.plan_hash_value, ash.module
+    WHERE sample_time > SYSDATE - INTERVAL '6' HOUR
+      AND sql_id IN (SELECT sql_id FROM changed_sqls)
+    GROUP BY ash.sql_id, ash.sql_plan_hash_value, ash.module
 ),
 ash_base AS (
     SELECT 
         ash.sql_id,
-        ash.plan_hash_value,
+        ash.sql_plan_hash_value AS plan_hash_value,
         u.username,
+        MIN(ash.sample_time) AS start_time,
+        MAX(ash.sample_time) AS end_time,
+        ROUND((MAX(ash.sample_time) - MIN(ash.sample_time)) * 1440, 2) AS runtime_minutes,
         COUNT(*) AS ash_samples
     FROM dba_hist_active_sess_history ash
     JOIN dba_users u ON ash.user_id = u.user_id
-    WHERE ash.sample_time > SYSDATE - INTERVAL '6' HOUR
-      AND ash.sql_id IN (SELECT sql_id FROM changed_sqls)
-      AND ash.plan_hash_value NOT IN (
+    WHERE sample_time > SYSDATE - INTERVAL '6' HOUR
+      AND sql_id IN (SELECT sql_id FROM changed_sqls)
+      AND ash.sql_plan_hash_value NOT IN (
           SELECT DISTINCT plan_hash_value 
           FROM dba_hist_sqlstat 
           WHERE sql_id = ash.sql_id
       )
-    GROUP BY ash.sql_id, ash.plan_hash_value, u.username
+    GROUP BY ash.sql_id, ash.sql_plan_hash_value, u.username
 ),
 ash_metrics AS (
     SELECT 
@@ -68,6 +75,9 @@ ash_metrics AS (
         'ASH_ONLY' AS source,
         tm.module,
         ab.username,
+        ab.start_time,
+        ab.end_time,
+        ab.runtime_minutes,
         NULL AS total_execs,
         NULL AS total_elapsed_secs,
         NULL AS total_cpu_secs,
@@ -78,7 +88,7 @@ ash_metrics AS (
         ab.ash_samples
     FROM ash_base ab
     LEFT JOIN top_modules tm 
-      ON ab.sql_id = tm.sql_id AND ab.plan_hash_value = tm.plan_hash_value AND tm.rnk = 1
+      ON ab.sql_id = tm.sql_id AND ab.plan_hash_value = tm.sql_plan_hash_value AND tm.rnk = 1
 ),
 combined AS (
     SELECT * FROM sqlstat_metrics
@@ -102,6 +112,9 @@ SELECT
     s.source,
     s.username,
     s.module,
+    s.start_time,
+    s.end_time,
+    s.runtime_minutes,
     s.total_execs,
     s.avg_elapsed_secs,
     s.avg_cpu_secs,
