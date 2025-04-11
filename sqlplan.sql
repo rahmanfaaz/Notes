@@ -1,18 +1,17 @@
-WITH env_info AS (
+WITH changed_sqls AS (
+    SELECT sql_id
+    FROM dba_hist_active_sess_history
+    WHERE sample_time > SYSDATE - INTERVAL '6' HOUR
+      AND sql_id NOT LIKE '0%'  -- exclude internal SQLs
+    GROUP BY sql_id
+    HAVING COUNT(DISTINCT sql_plan_hash_value) > 1
+),
+env_info AS (
     SELECT 
         (SELECT name FROM v$database) AS db_name,
         (SELECT host_name FROM v$instance) AS server_name,
-        (SELECT instance_name FROM v$instance) AS instance_name,
-        (SELECT LISTAGG(name, ', ') WITHIN GROUP (ORDER BY name) FROM gv$active_services) AS service_name
+        (SELECT instance_name FROM v$instance) AS instance_name
     FROM dual
-),
-sql_text_info AS (
-    SELECT 
-        sql_id,
-        -- extract table name after FROM/JOIN/UPDATE
-        REGEXP_SUBSTR(LOWER(sql_text), '(from|join|update)\\s+([a-zA-Z0-9_$.]+)', 1, 1, NULL, 2) AS target_table
-    FROM dba_hist_sqltext
-    WHERE sql_id = '0y8mgj784n3zg'
 ),
 sqlstat_metrics AS (
     SELECT 
@@ -30,7 +29,7 @@ sqlstat_metrics AS (
         ROUND(SUM(ss.cpu_time_delta) / NULLIF(SUM(ss.executions_delta), 0) / 1e6, 2) AS avg_cpu_secs,
         NULL AS ash_samples
     FROM dba_hist_sqlstat ss
-    WHERE ss.sql_id = '0y8mgj784n3zg'
+    WHERE ss.sql_id IN (SELECT sql_id FROM changed_sqls)
     GROUP BY ss.sql_id, ss.plan_hash_value
 ),
 top_modules AS (
@@ -41,8 +40,8 @@ top_modules AS (
         COUNT(*) AS usage_count,
         RANK() OVER (PARTITION BY ash.sql_id, ash.plan_hash_value ORDER BY COUNT(*) DESC) AS rnk
     FROM dba_hist_active_sess_history ash
-    WHERE ash.sql_id = '0y8mgj784n3zg'
-    AND ash.sample_time > SYSDATE - INTERVAL '6' HOUR
+    WHERE ash.sample_time > SYSDATE - INTERVAL '6' HOUR
+      AND ash.sql_id IN (SELECT sql_id FROM changed_sqls)
     GROUP BY ash.sql_id, ash.plan_hash_value, ash.module
 ),
 ash_base AS (
@@ -53,13 +52,13 @@ ash_base AS (
         COUNT(*) AS ash_samples
     FROM dba_hist_active_sess_history ash
     JOIN dba_users u ON ash.user_id = u.user_id
-    WHERE ash.sql_id = '0y8mgj784n3zg'
-    AND ash.sample_time > SYSDATE - INTERVAL '6' HOUR
-    AND ash.plan_hash_value NOT IN (
-        SELECT DISTINCT plan_hash_value 
-        FROM dba_hist_sqlstat 
-        WHERE sql_id = '0y8mgj784n3zg'
-    )
+    WHERE ash.sample_time > SYSDATE - INTERVAL '6' HOUR
+      AND ash.sql_id IN (SELECT sql_id FROM changed_sqls)
+      AND ash.plan_hash_value NOT IN (
+          SELECT DISTINCT plan_hash_value 
+          FROM dba_hist_sqlstat 
+          WHERE sql_id = ash.sql_id
+      )
     GROUP BY ash.sql_id, ash.plan_hash_value, u.username
 ),
 ash_metrics AS (
@@ -88,17 +87,16 @@ combined AS (
 ),
 scored AS (
     SELECT *,
-        RANK() OVER (ORDER BY avg_elapsed_secs NULLS LAST) * 0.4 +
-        RANK() OVER (ORDER BY avg_cpu_secs NULLS LAST) * 0.3 +
-        RANK() OVER (ORDER BY total_buffer_gets NULLS LAST) * 0.15 +
-        RANK() OVER (ORDER BY total_disk_reads NULLS LAST) * 0.15 AS perf_score
+        RANK() OVER (PARTITION BY sql_id ORDER BY avg_elapsed_secs NULLS LAST) * 0.4 +
+        RANK() OVER (PARTITION BY sql_id ORDER BY avg_cpu_secs NULLS LAST) * 0.3 +
+        RANK() OVER (PARTITION BY sql_id ORDER BY total_buffer_gets NULLS LAST) * 0.15 +
+        RANK() OVER (PARTITION BY sql_id ORDER BY total_disk_reads NULLS LAST) * 0.15 AS perf_score
     FROM combined
 )
 SELECT 
     ei.db_name,
     ei.server_name,
     ei.instance_name,
-    ei.service_name,
     s.sql_id,
     s.plan_hash_value,
     s.source,
@@ -113,11 +111,9 @@ SELECT
     ROUND(s.perf_score, 2) AS score,
     CASE 
         WHEN s.source = 'ASH_ONLY' THEN 'ℹ️ Seen only in ASH - no execution stats'
-        WHEN RANK() OVER (ORDER BY s.perf_score ASC NULLS LAST) = 1 THEN '✅ Best Plan'
+        WHEN RANK() OVER (PARTITION BY s.sql_id ORDER BY s.perf_score ASC NULLS LAST) = 1 THEN '✅ Best Plan'
         ELSE '⚠️ Slower Plan'
-    END AS verdict,
-    sti.target_table AS table_name
+    END AS verdict
 FROM scored s
 CROSS JOIN env_info ei
-LEFT JOIN sql_text_info sti ON s.sql_id = sti.sql_id
-ORDER BY s.perf_score NULLS LAST, s.ash_samples DESC;
+ORDER BY s.sql_id, s.perf_score NULLS LAST, s.ash_samples DESC;
