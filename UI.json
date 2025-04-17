@@ -1,0 +1,71 @@
+{
+  "Claims Processing Engine": {
+    "Dashboard": [
+      "Claims Summary",
+      "SLA Breach Indicators",
+      "Financial Impact Summary",
+      "Alerts & Notifications"
+    ],
+    "Claims Management": [
+      "New Claim Entry",
+      "Search/View Claims",
+      "Edit/Update Claims",
+      "Bulk Upload Claims",
+      "Attach Documents"
+    ],
+    "Case Workflows": {
+      "Workflow Assignment": [],
+      "Stage Tracking": [
+        "Intake",
+        "Review",
+        "Decision",
+        "Closure"
+      ],
+      "Task Management": [],
+      "Reopen/Appeal Claims": []
+    },
+    "Customer Profile": [
+      "View Customer Info",
+      "Claim History",
+      "Linked Accounts/Transactions"
+    ],
+    "Financial Adjustments": [
+      "Create Adjustments",
+      "Reversal Processing",
+      "Approval Workflow",
+      "Audit Trail"
+    ],
+    "Approvals & Authorisations": [
+      "Pending Authorisations",
+      "Multi-level Approval Flow",
+      "Delegation of Authority"
+    ],
+    "Reports & Analytics": [
+      "Standard Reports",
+      "Custom Report Builder",
+      "Download (CSV, PDF)",
+      "BI Integration"
+    ],
+    "Notifications & Alerts": [
+      "Internal Notes",
+      "Email/SMS Triggers",
+      "Escalation Matrix"
+    ],
+    "Admin Console": [
+      "User Management",
+      "Roles & Permissions",
+      "Master Data Setup",
+      "Workflow Configurator"
+    ],
+    "Audit & Compliance": [
+      "Access Logs",
+      "Claim Change History",
+      "Regulatory Logs"
+    ],
+    "Help & Support": [
+      "Knowledge Base",
+      "FAQs",
+      "Contact Support"
+    ]
+  }
+}
