@@ -1,93 +1,30 @@
-# Theme: Claims Processing for Debt/Overdraft in Financial Markets
+# Step 1: Fetch latest branches
+git fetch origin
 
----
+# Step 2: Check out the source branch
+git checkout origin/Release_Prod_Feature -b Release_Prod_Feature
 
-## Epic 1: Data Sourcing & Standardization
-**Goal**: Ingest and normalize data from PLM/ROW, TLP, IBS, and custodians.
+# Step 3: Create a new branch from it
+git checkout -b Release_Prod_Feature_DEP
 
-### Story: Integrate TLP/PLM for balances, trades, and exceptions
-- Task: Set up data feed connections (SFTP/API)
-- Task: Parse and transform raw trade/balance files
-- Task: Map to internal standard schema
+# Step 4: Make your code changes here
+# (edit files as needed)
 
-### Story: Receive custody data from 40+ custodians
-- Task: Design standard file template for MFX/shared folder intake
-- Task: Handle different file formats per custodian
-- Task: Build SFTP folder structure and access
+# Step 5: Stage and commit your changes
+git add .
+git commit -m "Changes for DEP functionality"
 
----
+# Step 6: Push the new branch to remote
+git push origin Release_Prod_Feature_DEP
 
-## Epic 2: Claims Engine Development
-**Goal**: Automate claim identification, confirmation, and rule-based processing.
+# Step 7: Switch back to the original branch
+git checkout Release_Prod_Feature
 
-### Story: Identify potential claims from exceptions
-- Task: Define exception types that trigger claims
-- Task: Build logic for claim identification
+# Step 8: Pull latest to avoid conflicts
+git pull origin Release_Prod_Feature
 
-### Story: Apply rule-based thresholds for claim eligibility
-- Task: Implement threshold/deadline/sensitivity rules
-- Task: Create a rule configuration interface
+# Step 9: Merge the DEP branch into it
+git merge Release_Prod_Feature_DEP
 
-### Story: Maker-Checker workflow for claims
-- Task: Design workflow states and transitions
-- Task: Implement maker/checker roles and UI flows
-
----
-
-## Epic 3: Integration with Kingfield (Claims Management)
-**Goal**: Sync claims data with Kingfield for operational management.
-
-### Story: Send eligible claims to Kingfield via API
-- Task: Define Kingfield API contract
-- Task: Map internal claim data to Kingfield schema
-- Task: Build retry/failure handling for API sync
-
----
-
-## Epic 4: Operations Dashboard
-**Goal**: Provide visibility into claims, exceptions, and processing status.
-
-### Story: Real-time status of claims on dashboard
-- Task: Build backend endpoints for status metrics
-- Task: Implement UI for dashboard widgets
-- Task: Add filtering by custodian, status, time
-
----
-
-## Epic 5: Data Transformation & Common Model
-**Goal**: Normalize input data into a unified internal model.
-
-### Story: Transform external data into a common model
-- Task: Define internal schema for trades, balances, claims
-- Task: Write mapping layer for transformation
-- Task: Implement schema validation
-
----
-
-## Epic 6: Debt/Overdraft Claim Lifecycle
-**Goal**: Handle the full lifecycle of debt/overdraft-related claims — from intake and validation to settlement and closure.
-
-### Story: Ingest overdraft-related claims
-- Task: Define overdraft claim schema (borrower ID, reason, amount, due date)
-- Task: Extend data ingestion to support overdraft tagging
-- Task: Map overdraft-related balances and transactions
-
-### Story: Validate overdraft claims against borrower limits
-- Task: Fetch borrower debt limits from State Street Core/internal DB
-- Task: Compare claim amount to overdraft ceiling
-- Task: Write test cases for threshold validation
-
-### Story: Auto-confirm debt-related claims
-- Task: Set auto-confirmation rules for low-risk claims
-- Task: Implement background auto-confirmation job
-- Task: Notify maker/checker team after confirmation
-
-### Story: Assign overdraft claims to processing queues
-- Task: Create severity scoring model
-- Task: Build routing logic
-- Task: Test queue prioritization with sample data
-
-### Story: Show overdue debt claims on dashboard
-- Task: Add “Overdue Claims” widget
-- Task: Color-code claims by urgency
-- Task: Enable CSV export by custodian
+# Step 10: Push merged changes
+git push origin Release_Prod_Feature
