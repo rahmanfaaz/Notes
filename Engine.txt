@@ -1,0 +1,1 @@
+The Claims Engine is a centralised platform designed to manage, track, and resolve financial claims efficiently. It supports automated ingestion, workflow customisation, and end-to-end auditability. With real-time dashboards and integrated rule-based processing, it ensures transparency and operational control.
