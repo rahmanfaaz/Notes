@@ -1,30 +1,16 @@
-# Step 1: Fetch latest branches
-git fetch origin
+Sprint Review Summary – Claims Engine Development
+Scope of Sprint:
+This sprint focused on laying the foundational components for the Claims Engine application. The primary objectives included requirement gathering, data modelling, UI development for the Claims Queue screen, and building backend APIs to interface with the database.
 
-# Step 2: Check out the source branch
-git checkout origin/Release_Prod_Feature -b Release_Prod_Feature
+Key Deliverables:
 
-# Step 3: Create a new branch from it
-git checkout -b Release_Prod_Feature_DEP
+Requirements Finalised: Core functional and non-functional requirements for the Claims Queue module were gathered and validated with stakeholders.
 
-# Step 4: Make your code changes here
-# (edit files as needed)
+Data Model Defined: A scalable Snowflake-based data model was designed to support the Claims Queue functionality, with emphasis on flexibility for future modules.
 
-# Step 5: Stage and commit your changes
-git add .
-git commit -m "Changes for DEP functionality"
+UI Development: A preliminary version of the Claims Queue screen was developed, aligning with the UX standards and supporting dynamic rendering of claim metadata.
 
-# Step 6: Push the new branch to remote
-git push origin Release_Prod_Feature_DEP
+API Layer Implemented: Backend APIs were built and integrated to fetch data from the database and deliver it to the UI efficiently, supporting pagination, filtering, and sorting capabilities.
 
-# Step 7: Switch back to the original branch
-git checkout Release_Prod_Feature
-
-# Step 8: Pull latest to avoid conflicts
-git pull origin Release_Prod_Feature
-
-# Step 9: Merge the DEP branch into it
-git merge Release_Prod_Feature_DEP
-
-# Step 10: Push merged changes
-git push origin Release_Prod_Feature
+Outcome:
+The sprint successfully achieved the target scope, providing a functional prototype of the Claims Queue with working data flows. The platform is now well-positioned for further enhancements including Claims Manager screen, validation datasets, and audit trail integration in upcoming sprints
