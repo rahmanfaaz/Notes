@@ -1,16 +1,12 @@
-Sprint Review Summary – Claims Engine Development
-Scope of Sprint:
-This sprint focused on laying the foundational components for the Claims Engine application. The primary objectives included requirement gathering, data modelling, UI development for the Claims Queue screen, and building backend APIs to interface with the database.
-
-Key Deliverables:
-
-Requirements Finalised: Core functional and non-functional requirements for the Claims Queue module were gathered and validated with stakeholders.
-
-Data Model Defined: A scalable Snowflake-based data model was designed to support the Claims Queue functionality, with emphasis on flexibility for future modules.
-
-UI Development: A preliminary version of the Claims Queue screen was developed, aligning with the UX standards and supporting dynamic rendering of claim metadata.
-
-API Layer Implemented: Backend APIs were built and integrated to fetch data from the database and deliver it to the UI efficiently, supporting pagination, filtering, and sorting capabilities.
-
-Outcome:
-The sprint successfully achieved the target scope, providing a functional prototype of the Claims Queue with working data flows. The platform is now well-positioned for further enhancements including Claims Manager screen, validation datasets, and audit trail integration in upcoming sprints
+SELECT
+  sql_id,
+  ROUND(sharable_mem / (1024 * 1024), 2) AS sharable_mem_mb,
+  ROUND(persistent_mem / (1024 * 1024), 2) AS persistent_mem_mb,
+  ROUND(runtime_mem / (1024 * 1024), 2) AS runtime_mem_mb,
+  ROUND((sharable_mem + persistent_mem + runtime_mem) / (1024 * 1024), 2) AS total_mem_mb,
+  parsing_schema_name,
+  sql_text
+FROM v$sql
+WHERE UPPER(sql_text) LIKE '%YOUR_KEYWORD%' -- <- filter for your query
+AND ROWNUM <= 5
+ORDER BY total_mem_mb DESC;
