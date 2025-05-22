@@ -1,20 +1,72 @@
-#!/bin/bash
+Here is the **complete transition logic** for your Claims Engine using three tables (`claims`, `claims_queue`, `claims_manager`) and `claims_audit_log` for tracking every action.
 
-NAMESPACE="icr-ds-dep"
-POD_PATTERN="db-ingestion"
+---
 
-echo "Watching for new pods matching '$POD_PATTERN' in namespace '$NAMESPACE'..."
+## 🔄 **Claims Transition Logic**
 
-kubectl get pods -n "$NAMESPACE" --watch-only | grep --line-buffered "$POD_PATTERN" | while read -r line; do
-    pod=$(echo "$line" | awk '{print $1}')
-    echo "New pod detected: $pod — attempting to fetch logs immediately..."
+### 1. 🆕 Ingest Claim
 
-    # Try fetching current logs
-    echo -e "\n--- Logs from pod '$pod' ---"
-    if ! kubectl logs -n "$NAMESPACE" "$pod" --timestamps; then
-        echo "Primary log fetch failed, trying with --previous (pod likely exited)..."
-        kubectl logs -n "$NAMESPACE" "$pod" --previous --timestamps
-    fi
+* **Action**: New claim enters the system
+* **Steps**:
 
-    break  # Exit after first match
-done
+  * Insert into `claims`
+  * Insert into `claims_queue` (status = `'OUTSTANDING'`)
+  * Insert into `claims_audit_log` (action = `'INGESTED'`)
+
+---
+
+### 2. ✅ Accept Claim
+
+* **Action**: Claim accepted for processing
+* **Steps**:
+
+  * Delete from `claims_queue`
+  * Insert into `claims_manager` (status = `'ACCEPTED'`)
+  * Insert into `claims_audit_log` (action = `'ACCEPTED'`)
+
+---
+
+### 3. ❌ Reject Claim
+
+* **Action**: Claim rejected, no further action taken
+* **Steps**:
+
+  * Delete from `claims_queue`
+  * Do *not* insert into `claims_manager`
+  * Insert into `claims_audit_log` (action = `'REJECTED'`)
+
+---
+
+### 4. ↩️ Undo Rejection
+
+* **Action**: Bring a rejected claim back to queue
+* **Steps**:
+
+  * Insert into `claims_queue` (status = `'OUTSTANDING'`)
+  * Insert into `claims_audit_log` (action = `'UNDO_REJECTION'`)
+
+---
+
+### 5. 📤 Complete/Close Claim (Optional)
+
+* **Action**: Claim completed or archived
+* **Steps**:
+
+  * Delete or update `claims_manager` (e.g. set status = `'COMPLETED'`)
+  * Insert into `claims_audit_log` (action = `'COMPLETED'` or `'CLOSED'`)
+
+---
+
+### 📒 Example `claims_audit_log` Actions
+
+| Action           | Triggered When...                       |
+| ---------------- | --------------------------------------- |
+| `INGESTED`       | Claim is first created                  |
+| `ACCEPTED`       | Claim is taken for processing           |
+| `REJECTED`       | Claim is rejected from the queue        |
+| `UNDO_REJECTION` | Rejected claim is brought back to queue |
+| `COMPLETED`      | Claim processing is marked done         |
+
+---
+
+Would you like to convert this into a diagram (flowchart or state machine), or generate stored procedures to enforce each transition?
