@@ -7,27 +7,14 @@ echo "Watching for new pods matching '$POD_PATTERN' in namespace '$NAMESPACE'...
 
 kubectl get pods -n "$NAMESPACE" --watch-only | grep --line-buffered "$POD_PATTERN" | while read -r line; do
     pod=$(echo "$line" | awk '{print $1}')
-    echo "Pod '$pod' detected. Waiting until it is running or completed..."
+    echo "New pod detected: $pod — attempting to fetch logs immediately..."
 
-    # Wait until pod is in Running, Completed, or Failed state
-    while true; do
-        phase=$(kubectl get pod "$pod" -n "$NAMESPACE" -o jsonpath='{.status.phase}' 2>/dev/null)
-        if [[ "$phase" == "Running" || "$phase" == "Succeeded" || "$phase" == "Failed" ]]; then
-            echo "Pod '$pod' is now in '$phase' state. Proceeding to fetch logs..."
-            break
-        fi
-        sleep 0.5
-    done
+    # Try fetching current logs
+    echo -e "\n--- Logs from pod '$pod' ---"
+    if ! kubectl logs -n "$NAMESPACE" "$pod" --timestamps; then
+        echo "Primary log fetch failed, trying with --previous (pod likely exited)..."
+        kubectl logs -n "$NAMESPACE" "$pod" --previous --timestamps
+    fi
 
-    # Get container names (in case of multi-container pods)
-    containers=$(kubectl get pod "$pod" -n "$NAMESPACE" -o jsonpath='{.spec.containers[*].name}')
-
-    for container in $containers; do
-        echo -e "\n========== Logs from container '$container' in pod '$pod' =========="
-        # Try main logs, fall back to --previous if pod failed
-        kubectl logs "$pod" -n "$NAMESPACE" -c "$container" --timestamps || \
-        kubectl logs "$pod" -n "$NAMESPACE" -c "$container" --previous --timestamps
-    done
-
-    break  # exit after first matching pod
+    break  # Exit after first match
 done
