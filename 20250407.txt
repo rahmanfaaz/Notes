@@ -1,72 +1,41 @@
-Here is the **complete transition logic** for your Claims Engine using three tables (`claims`, `claims_queue`, `claims_manager`) and `claims_audit_log` for tracking every action.
+🧭 Claims Engine – Transition Logic with Audit Events
+1. 🆕 Ingest Claim
+Insert into claims table
 
----
+Audit Log: claims_audit_log → action = 'INGESTED'
 
-## 🔄 **Claims Transition Logic**
+2. ➕ Queue Entry (Outstanding)
+Insert into claims_queue with status = 'OUTSTANDING'
 
-### 1. 🆕 Ingest Claim
+Audit Log: claims_audit_log → action = 'QUEUED' or 'OUTSTANDING'
 
-* **Action**: New claim enters the system
-* **Steps**:
+3. ✅ Accept Claim
+Delete from claims_queue
 
-  * Insert into `claims`
-  * Insert into `claims_queue` (status = `'OUTSTANDING'`)
-  * Insert into `claims_audit_log` (action = `'INGESTED'`)
+Insert into claims_manager with status = 'NEW'
 
----
+Audit Log: claims_audit_log → action = 'ACCEPTED'
 
-### 2. ✅ Accept Claim
+4. ❌ Reject Claim
+Delete from claims_queue
 
-* **Action**: Claim accepted for processing
-* **Steps**:
+Audit Log: claims_audit_log → action = 'REJECTED'
 
-  * Delete from `claims_queue`
-  * Insert into `claims_manager` (status = `'ACCEPTED'`)
-  * Insert into `claims_audit_log` (action = `'ACCEPTED'`)
+5. ↩️ Undo Rejection
+Insert into claims_queue with status = 'OUTSTANDING'
 
----
+Audit Log: claims_audit_log → action = 'REJECTION_REVERSAL'
 
-### 3. ❌ Reject Claim
+6. 🔄 Manager Status Change: NEW → UNDER_INVESTIGATION
+Update in claims_manager (status = 'UNDER_INVESTIGATION')
 
-* **Action**: Claim rejected, no further action taken
-* **Steps**:
+Audit Log: claims_manager_audit_log → action = 'MOVED_TO_INVESTIGATION'
 
-  * Delete from `claims_queue`
-  * Do *not* insert into `claims_manager`
-  * Insert into `claims_audit_log` (action = `'REJECTED'`)
+7. 📤 Finalize Claim (Close / Reject)
+Update or delete from claims_manager (based on your closure policy)
 
----
+Audit Log: claims_manager_audit_log →
 
-### 4. ↩️ Undo Rejection
+action = 'CLOSED' or
 
-* **Action**: Bring a rejected claim back to queue
-* **Steps**:
-
-  * Insert into `claims_queue` (status = `'OUTSTANDING'`)
-  * Insert into `claims_audit_log` (action = `'UNDO_REJECTION'`)
-
----
-
-### 5. 📤 Complete/Close Claim (Optional)
-
-* **Action**: Claim completed or archived
-* **Steps**:
-
-  * Delete or update `claims_manager` (e.g. set status = `'COMPLETED'`)
-  * Insert into `claims_audit_log` (action = `'COMPLETED'` or `'CLOSED'`)
-
----
-
-### 📒 Example `claims_audit_log` Actions
-
-| Action           | Triggered When...                       |
-| ---------------- | --------------------------------------- |
-| `INGESTED`       | Claim is first created                  |
-| `ACCEPTED`       | Claim is taken for processing           |
-| `REJECTED`       | Claim is rejected from the queue        |
-| `UNDO_REJECTION` | Rejected claim is brought back to queue |
-| `COMPLETED`      | Claim processing is marked done         |
-
----
-
-Would you like to convert this into a diagram (flowchart or state machine), or generate stored procedures to enforce each transition?
+action = 'REJECTED_IN_MANAGER'
