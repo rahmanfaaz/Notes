@@ -1,41 +1,9 @@
-🧭 Claims Engine – Transition Logic with Audit Events
-1. 🆕 Ingest Claim
-Insert into claims table
-
-Audit Log: claims_audit_log → action = 'INGESTED'
-
-2. ➕ Queue Entry (Outstanding)
-Insert into claims_queue with status = 'OUTSTANDING'
-
-Audit Log: claims_audit_log → action = 'QUEUED' or 'OUTSTANDING'
-
-3. ✅ Accept Claim
-Delete from claims_queue
-
-Insert into claims_manager with status = 'NEW'
-
-Audit Log: claims_audit_log → action = 'ACCEPTED'
-
-4. ❌ Reject Claim
-Delete from claims_queue
-
-Audit Log: claims_audit_log → action = 'REJECTED'
-
-5. ↩️ Undo Rejection
-Insert into claims_queue with status = 'OUTSTANDING'
-
-Audit Log: claims_audit_log → action = 'REJECTION_REVERSAL'
-
-6. 🔄 Manager Status Change: NEW → UNDER_INVESTIGATION
-Update in claims_manager (status = 'UNDER_INVESTIGATION')
-
-Audit Log: claims_manager_audit_log → action = 'MOVED_TO_INVESTIGATION'
-
-7. 📤 Finalize Claim (Close / Reject)
-Update or delete from claims_manager (based on your closure policy)
-
-Audit Log: claims_manager_audit_log →
-
-action = 'CLOSED' or
-
-action = 'REJECTED_IN_MANAGER'
+grep '502' access.log | awk '{
+  match($0, /MicSec:([0-9]+)/, m);
+  if (m[1]) {
+    minutes = m[1] / 60000000;
+    printf "%s -> MicSec in minutes: %.6f\n", $0, minutes;
+  } else {
+    print $0;
+  }
+}'
