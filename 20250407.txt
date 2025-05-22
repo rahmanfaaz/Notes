@@ -1,9 +1,27 @@
-grep '502' access.log | awk '{
-  match($0, /MicSec:([0-9]+)/, m);
-  if (m[1]) {
-    minutes = m[1] / 60000000;
-    printf "%s -> MicSec in minutes: %.6f\n", $0, minutes;
-  } else {
-    print $0;
-  }
-}'
+- stage:
+    name: Set_Latest_Chart_Version
+    identifier: Set_Latest_Chart_Version
+    type: CI
+    spec:
+      execution:
+        steps:
+          - step:
+              name: Fetch_Latest_Chart
+              identifier: Fetch_Latest_Chart
+              type: ShellScript
+              spec:
+                shell: Bash
+                onDelegate: true
+                script: |
+                  latest=$(helm search repo icr_dep_helm_charts_identifier --versions | grep -Eo '1\.[0-9]+' | sort -V | tail -1)
+                  echo "CHART_VERSION=$latest"
+                outputVariables:
+                  - name: CHART_VERSION
+
+spec:
+  manifests:
+    - manifest:
+        identifier: icr_dep_helm_charts_identifier
+        type: HelmChart
+        spec:
+          chartVersion: <+pipeline.stages.Set_Latest_Chart_Version.spec.execution.steps.Fetch_Latest_Chart.output.outputVariables.CHART_VERSION>
