@@ -1,27 +1,25 @@
-- stage:
-    name: Set_Latest_Chart_Version
-    identifier: Set_Latest_Chart_Version
-    type: CI
-    spec:
-      execution:
-        steps:
-          - step:
-              name: Fetch_Latest_Chart
-              identifier: Fetch_Latest_Chart
-              type: ShellScript
-              spec:
-                shell: Bash
-                onDelegate: true
-                script: |
-                  latest=$(helm search repo icr_dep_helm_charts_identifier --versions | grep -Eo '1\.[0-9]+' | sort -V | tail -1)
-                  echo "CHART_VERSION=$latest"
-                outputVariables:
-                  - name: CHART_VERSION
+Certainly. Here's a refined JIRA story written in posh British English for your requirement:
 
-spec:
-  manifests:
-    - manifest:
-        identifier: icr_dep_helm_charts_identifier
-        type: HelmChart
-        spec:
-          chartVersion: <+pipeline.stages.Set_Latest_Chart_Version.spec.execution.steps.Fetch_Latest_Chart.output.outputVariables.CHART_VERSION>
+---
+
+**Title:** Incorporate New Currency into FX Extract File – EMEA Depositary Business
+
+**Description:**
+As part of the EMEA Depositary business's ongoing enhancements, we need to incorporate a newly supported currency into the existing FX extract file. This update will ensure comprehensive currency coverage and maintain alignment with operational requirements for foreign exchange reporting.
+
+**Acceptance Criteria:**
+
+1. The new currency code is added to the FX extract file generation logic.
+2. All relevant mappings and transformations reflect the inclusion of the new currency.
+3. Downstream systems consuming the extract recognise and process the updated format without issue.
+4. Appropriate validations and reconciliation checks are updated to accommodate the new currency.
+5. Regression testing is completed to confirm no impact to existing currency data.
+
+**Notes:**
+
+* Coordination may be required with the data governance and downstream reconciliation teams.
+* The currency code and corresponding metadata will be provided separately.
+
+---
+
+Let me know if you'd like to adapt it for a technical or business audience within the JIRA framework.
