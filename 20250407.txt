@@ -1,25 +1,25 @@
-Certainly. Here's a refined JIRA story written in posh British English for your requirement:
+Thank you for the clarification. Here's the revised JIRA story in posh British English:
 
 ---
 
-**Title:** Incorporate New Currency into FX Extract File – EMEA Depositary Business
+**Title:** Add "Bank to Bank Information" Column to Prior Settled CSH Extract File
 
 **Description:**
-As part of the EMEA Depositary business's ongoing enhancements, we need to incorporate a newly supported currency into the existing FX extract file. This update will ensure comprehensive currency coverage and maintain alignment with operational requirements for foreign exchange reporting.
+As part of ongoing enhancements to the Prior Settled CSH extract, a new column titled **"Bank to Bank Information"** is to be introduced. This addition aims to provide greater clarity in banking details and support more granular analysis of settlement instructions.
 
 **Acceptance Criteria:**
 
-1. The new currency code is added to the FX extract file generation logic.
-2. All relevant mappings and transformations reflect the inclusion of the new currency.
-3. Downstream systems consuming the extract recognise and process the updated format without issue.
-4. Appropriate validations and reconciliation checks are updated to accommodate the new currency.
-5. Regression testing is completed to confirm no impact to existing currency data.
+1. A new column labelled **"Bank to Bank Information"** is added to the Prior Settled CSH extract file.
+2. The column is populated with accurate data as sourced from the underlying banking instruction records.
+3. The format and placement of the new column adhere to existing extract structure and conventions.
+4. All relevant systems and stakeholders are informed of the change, with downstream consumers confirming compatibility.
+5. Regression testing and data validation are completed to ensure no adverse impact on current functionality.
 
 **Notes:**
 
-* Coordination may be required with the data governance and downstream reconciliation teams.
-* The currency code and corresponding metadata will be provided separately.
+* Sample data and mapping guidelines for the new column will be provided by the business team.
+* Any changes to documentation or data dictionaries should be captured as part of this story.
 
 ---
 
-Let me know if you'd like to adapt it for a technical or business audience within the JIRA framework.
+Let me know if you'd like a version tailored for a more technical audience.
