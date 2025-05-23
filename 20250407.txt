@@ -1,25 +1,9 @@
-Thank you for the clarification. Here's the refined JIRA story with that detail included:
+You manage a Helm chart (e.g., claims-service) deployed via a Harness pipeline. Each successful CI build updates a chart version (e.g., v1.2.17 → v1.2.18). Instead of manually logging into the UI to select the new version during deployment...
 
----
-
-**Title:** Add "Country Code" Column to Prior Settled CSH Extract File
-
-**Description:**
-To enable more robust country-level reporting and facilitate future scalability, a new column titled **"Country Code"** is to be added to the Prior Settled CSH extract file. Although the current dataset comprises records for funds domiciled in a single country, this enhancement will introduce flexibility for multi-country support. The country code will follow standard three-letter representations (e.g., *ITA* for Italy).
-
-**Acceptance Criteria:**
-
-1. A new column named **"Country Code"** is introduced to the Prior Settled CSH extract file.
-2. The column is populated using standard ISO 3166-1 alpha-3 codes (e.g., *ITA*, *GBR*, *DEU*).
-3. All existing records are backfilled with the appropriate code for the relevant country.
-4. The extract layout is updated while maintaining backward compatibility for downstream systems.
-5. Successful completion of regression testing and validation to ensure data accuracy and structural integrity.
-
-**Notes:**
-
-* Initial values (e.g., *ITA* for Italy) will be provided by the business team based on current fund mappings.
-* Relevant documentation and technical specifications must be updated to reflect this schema change.
-
----
-
-Let me know if you'd like this positioned under a parent Epic or broken into subtasks.
+harness pipeline execute \
+  --accountIdentifier your_account \
+  --orgIdentifier your_org \
+  --projectIdentifier your_project \
+  --pipelineIdentifier promote-helm-release \
+  --inputYamlFile values.yaml \
+  --inputsYaml "chartVersion: 1.2.18"
