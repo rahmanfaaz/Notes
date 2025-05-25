@@ -1,32 +1,32 @@
-Here’s the clean, professional JIRA story draft for that:
+Here’s the clean, no-frills JIRA story draft for this:
 
 ---
 
 **Story Title:**
-Implement TNA Data Fetch from MDB and Delivery via MFX for Closed Funds
+Implement Data Fetch from MYSS and Delivery via iDeliver for ITA, LUX, NLD, and IRE
 
 ---
 
 **Description:**
-This story focuses on setting up the data integration to fetch Total Net Assets (TNA) data from the MDB application. Whenever a fund is marked as closed, the corresponding TNA data should be extracted from MDB and securely transmitted to the destination system using the MFX interface. This ensures accurate and timely delivery of TNA figures for closed funds, supporting downstream processes and reporting.
+This story covers the implementation of a data integration process to fetch required data from the MYSS application and deliver it to the designated destination systems using the iDeliver interface application. The integration must support four target countries: Italy (ITA), Luxembourg (LUX), Netherlands (NLD), and Ireland (IRE). This ensures that country-specific data is accurately and securely transmitted, enabling smooth cross-system operations and compliance with regional requirements.
 
 ---
 
 **Acceptance Criteria:**
 
-* Identify and document the specific TNA data points required from MDB for closed funds
-* Develop and implement a mechanism to extract TNA data from MDB upon fund closure
-* Ensure the extracted data is formatted according to MFX transmission requirements
-* Configure the MFX interface to securely deliver the TNA data to the destination system
-* Conduct end-to-end testing to verify accurate extraction, formatting, and delivery of TNA data
-* Implement error handling and alerting mechanisms for any extraction or transmission failures
-* Complete documentation of the integration process, including mappings, scheduling, and troubleshooting guidelines
+* Identify and document the specific data elements to be fetched from MYSS for each of the four countries
+* Develop and implement extraction processes to retrieve the required data from MYSS
+* Ensure the data is properly formatted and packaged according to iDeliver interface requirements
+* Configure iDeliver to route the data correctly for ITA, LUX, NLD, and IRE destinations
+* Conduct end-to-end testing to verify accurate extraction, country-specific routing, and secure delivery
+* Implement error handling, retry mechanisms, and alerts for any extraction or transmission issues
+* Complete integration documentation, including country mappings, scheduling, and operational guidelines
 
 ---
 
 **Comment upon Successful Completion:**
-The integration for fetching TNA data from MDB and delivering it via MFX for closed funds has been successfully implemented. The solution has been tested end-to-end, ensuring accurate data extraction, proper formatting, and secure delivery. All documentation has been completed, and the process is now fully operational.
+The data fetch from MYSS and delivery via iDeliver for ITA, LUX, NLD, and IRE has been successfully implemented. All components have been configured, tested, and validated, ensuring accurate and secure data transmission to the respective country destinations. Documentation has been finalised, and the solution is now live and operational.
 
 ---
 
-Let me know if you want me to draft a **related technical task** or **subtasks** under this story!
+Let me know if you want the **subtasks split by country** or any **additional compliance or validation checks** added!
