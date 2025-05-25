@@ -1,31 +1,31 @@
-Here’s your clean JIRA story draft:
+Here’s the JIRA story draft based on the title you provided:
 
 ---
 
 **Story Title:**
-Set Up Entitlements for Fund Management via ESF for ITA, LUX, NLD, and IRE
+ICR\_NGC || Depositaries EMEA || Fix Missing Transactions in Prior Settled Cash Report
 
 ---
 
 **Description:**
-This story focuses on configuring entitlements for the funds used within the application by integrating with the ESF system. The implementation will cover four countries: Italy (ITA), Luxembourg (LUX), Netherlands (NLD), and Ireland (IRE). This setup will enable the business teams to independently maintain and manage their fund lists using EDG and MDG, improving operational flexibility and reducing dependency on technical teams.
+This story addresses the issue of missing transactions in the Prior Settled Cash Report within the ICR\_NGC system under the EMEA Depositaries project. The objective is to identify the root cause of the missing transactions, implement the necessary fixes to ensure accurate report generation, and prevent recurrence in future report cycles. This will improve data completeness and reporting accuracy for the business stakeholders.
 
 ---
 
 **Acceptance Criteria:**
 
-* Identify and document the specific fund entitlements required for ITA, LUX, NLD, and IRE
-* Configure ESF to handle entitlement setups for each of the four countries
-* Ensure integration points with EDG and MDG are properly established for seamless fund list management
-* Conduct testing to verify correct entitlement setup and business self-service functionality
-* Implement error handling and provide appropriate access controls and audit trails
-* Finalise and deliver documentation detailing entitlement configurations, country-specific setups, and operational instructions for business users
+* Analyse and document the gaps or reasons behind the missing transactions in the Prior Settled Cash Report
+* Implement corrections in the extraction, transformation, or reporting logic as needed to capture all relevant transactions
+* Conduct data validation and reconciliation to confirm that previously missing transactions are now accurately reflected
+* Perform regression testing to ensure that no new issues are introduced in the report
+* Coordinate with business users to review and confirm the updated report accuracy
+* Complete documentation outlining the fix, applied changes, and validation results
 
 ---
 
 **Comment upon Successful Completion:**
-The entitlement setup for funds via ESF has been successfully implemented for ITA, LUX, NLD, and IRE. Integration with EDG and MDG is complete, allowing business teams to manage their fund lists independently. All configurations have been tested and documented, and the solution is now live and operational.
+The issue of missing transactions in the Prior Settled Cash Report has been successfully resolved. The root cause was addressed, necessary code and logic updates were applied, and validation confirmed that all transactions are now accurately included. The fix has been tested, reviewed with the business team, and is now live in production.
 
 ---
 
-Let me know if you want **subtasks for each country** or **user training notes** included!
+Let me know if you want this also broken into **subtasks (e.g., root cause analysis, code fix, testing)** or written in a **formal British English tone**!
