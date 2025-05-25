@@ -3,29 +3,29 @@ Here’s the JIRA story draft based on the title you provided:
 ---
 
 **Story Title:**
-ICR\_NGC || Depositaries EMEA || Fix Missing Transactions in Prior Settled Cash Report
+ICR\_NGC || Depositaries EMEA || Enhancement of FX Rates Report to Pick Up Data for Multiple Dates
 
 ---
 
 **Description:**
-This story addresses the issue of missing transactions in the Prior Settled Cash Report within the ICR\_NGC system under the EMEA Depositaries project. The objective is to identify the root cause of the missing transactions, implement the necessary fixes to ensure accurate report generation, and prevent recurrence in future report cycles. This will improve data completeness and reporting accuracy for the business stakeholders.
+This story focuses on enhancing the FX Rates Report within the ICR\_NGC system under the EMEA Depositaries project. Currently, the report is limited in scope and only retrieves data for a single date. The objective is to modify the report logic to allow retrieval of FX rate data across multiple dates, improving its utility for analysis, reconciliation, and reporting purposes.
 
 ---
 
 **Acceptance Criteria:**
 
-* Analyse and document the gaps or reasons behind the missing transactions in the Prior Settled Cash Report
-* Implement corrections in the extraction, transformation, or reporting logic as needed to capture all relevant transactions
-* Conduct data validation and reconciliation to confirm that previously missing transactions are now accurately reflected
-* Perform regression testing to ensure that no new issues are introduced in the report
-* Coordinate with business users to review and confirm the updated report accuracy
-* Complete documentation outlining the fix, applied changes, and validation results
+* Analyse and document the current FX Rates Report design and date selection mechanism
+* Update the report logic to support data extraction for multiple specified dates
+* Ensure that the report output is properly structured and displays multi-date data clearly and accurately
+* Conduct validation tests to confirm that data for all selected dates is being correctly retrieved and presented
+* Perform regression testing to ensure no impact on other report functionalities or downstream processes
+* Finalise documentation outlining the enhancement, including configuration changes, testing results, and usage guidelines
 
 ---
 
 **Comment upon Successful Completion:**
-The issue of missing transactions in the Prior Settled Cash Report has been successfully resolved. The root cause was addressed, necessary code and logic updates were applied, and validation confirmed that all transactions are now accurately included. The fix has been tested, reviewed with the business team, and is now live in production.
+The enhancement to the FX Rates Report has been successfully implemented, enabling the report to pick up data for multiple dates. All changes have been tested and validated, ensuring accurate multi-date data retrieval without impacting existing functionalities. The enhancement is now live and operational, with updated documentation provided to stakeholders.
 
 ---
 
-Let me know if you want this also broken into **subtasks (e.g., root cause analysis, code fix, testing)** or written in a **formal British English tone**!
+Let me know if you want this written in a **more formal tone** or if you’d like me to prepare **detailed subtasks** for development, testing, and documentation!
