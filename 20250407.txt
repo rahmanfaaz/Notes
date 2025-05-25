@@ -1,31 +1,34 @@
-Here’s the JIRA story draft based on the title you provided:
+Here’s your refined and detailed JIRA story written in polished, formal British English:
 
 ---
 
 **Story Title:**
-ICR\_NGC || Depositaries EMEA || Enhancement of FX Rates Report to Pick Up Data for Multiple Dates
+ICR\_NGC || Depositaries EMEA || Recreate the Prior Settled Cash Report in SSCD vs Legacy Custody
 
 ---
 
 **Description:**
-This story focuses on enhancing the FX Rates Report within the ICR\_NGC system under the EMEA Depositaries project. Currently, the report is limited in scope and only retrieves data for a single date. The objective is to modify the report logic to allow retrieval of FX rate data across multiple dates, improving its utility for analysis, reconciliation, and reporting purposes.
+This story pertains to the meticulous reconstruction of the Prior Settled Cash Report within the ICR\_NGC platform, aligning it precisely with the standards and expectations of the SSCD system as compared to the existing Legacy Custody framework. The purpose of this enhancement is to ensure that the report generated within SSCD offers full functional parity, comprehensive data alignment, and superior accuracy relative to the legacy system, thereby upholding the highest standards of operational reporting and client confidence.
+
+This initiative is critical to enable seamless reporting continuity, particularly as stakeholders transition their operational reliance from the legacy custody system to the modernised SSCD infrastructure.
 
 ---
 
 **Acceptance Criteria:**
 
-* Analyse and document the current FX Rates Report design and date selection mechanism
-* Update the report logic to support data extraction for multiple specified dates
-* Ensure that the report output is properly structured and displays multi-date data clearly and accurately
-* Conduct validation tests to confirm that data for all selected dates is being correctly retrieved and presented
-* Perform regression testing to ensure no impact on other report functionalities or downstream processes
-* Finalise documentation outlining the enhancement, including configuration changes, testing results, and usage guidelines
+* Conduct a detailed analysis comparing the structure, logic, and data lineage of the Prior Settled Cash Report in the Legacy Custody system
+* Design and implement the equivalent report within SSCD, ensuring that it captures all requisite data points and business rules
+* Validate the accuracy, completeness, and formatting of the recreated report by conducting rigorous data reconciliations against the legacy version
+* Ensure that the new SSCD report adheres to all applicable compliance, audit, and operational standards
+* Perform comprehensive regression testing to confirm no adverse impact on adjacent reporting processes or downstream systems
+* Engage key business stakeholders to review, validate, and formally sign off the recreated report’s outputs
+* Finalise and deliver full supporting documentation, including technical specifications, functional mappings, and user guidance materials
 
 ---
 
 **Comment upon Successful Completion:**
-The enhancement to the FX Rates Report has been successfully implemented, enabling the report to pick up data for multiple dates. All changes have been tested and validated, ensuring accurate multi-date data retrieval without impacting existing functionalities. The enhancement is now live and operational, with updated documentation provided to stakeholders.
+The Prior Settled Cash Report has been successfully and meticulously recreated within SSCD to match and surpass the capabilities of the Legacy Custody system. All functional elements, data flows, and report outputs have been validated and reconciled to ensure impeccable accuracy and completeness. Stakeholder review and acceptance have been obtained, and the solution is now live, with all relevant documentation delivered and archived for future reference.
 
 ---
 
-Let me know if you want this written in a **more formal tone** or if you’d like me to prepare **detailed subtasks** for development, testing, and documentation!
+Should you wish, I can also prepare a **formal executive summary** or **presentation notes** to accompany this for stakeholder meetings — simply let me know!
