@@ -1,32 +1,32 @@
-Here’s the clean, no-frills JIRA story draft for this:
+Here’s the clean JIRA story draft for this:
 
 ---
 
 **Story Title:**
-Implement Data Fetch from MYSS and Delivery via iDeliver for ITA, LUX, NLD, and IRE
+Extend Mediator for Swift Messages from inCash to All Countries
 
 ---
 
 **Description:**
-This story covers the implementation of a data integration process to fetch required data from the MYSS application and deliver it to the designated destination systems using the iDeliver interface application. The integration must support four target countries: Italy (ITA), Luxembourg (LUX), Netherlands (NLD), and Ireland (IRE). This ensures that country-specific data is accurately and securely transmitted, enabling smooth cross-system operations and compliance with regional requirements.
+This story involves enhancing the existing mediator process that retrieves Swift messages from the inCash application. Currently, the setup is functional only for Italy (ITA). The objective is to extend this mediator so it can handle and process Swift messages for all applicable countries, ensuring consistent and scalable message flow across regions.
 
 ---
 
 **Acceptance Criteria:**
 
-* Identify and document the specific data elements to be fetched from MYSS for each of the four countries
-* Develop and implement extraction processes to retrieve the required data from MYSS
-* Ensure the data is properly formatted and packaged according to iDeliver interface requirements
-* Configure iDeliver to route the data correctly for ITA, LUX, NLD, and IRE destinations
-* Conduct end-to-end testing to verify accurate extraction, country-specific routing, and secure delivery
-* Implement error handling, retry mechanisms, and alerts for any extraction or transmission issues
-* Complete integration documentation, including country mappings, scheduling, and operational guidelines
+* Review and document the current mediator setup handling Swift messages from inCash for ITA
+* Identify all additional countries to be included in the extended scope
+* Update the mediator logic to support message retrieval and handling for all target countries
+* Ensure country-specific configurations, if any, are applied within the extended setup
+* Conduct end-to-end testing to validate Swift message retrieval, processing, and delivery for each country
+* Implement robust error handling and alerting mechanisms across the expanded scope
+* Update and finalise documentation, including updated country lists, configurations, and operational guidelines
 
 ---
 
 **Comment upon Successful Completion:**
-The data fetch from MYSS and delivery via iDeliver for ITA, LUX, NLD, and IRE has been successfully implemented. All components have been configured, tested, and validated, ensuring accurate and secure data transmission to the respective country destinations. Documentation has been finalised, and the solution is now live and operational.
+The mediator for Swift messages from inCash has been successfully extended to cover all countries beyond ITA. The solution has been fully tested, verified, and documented, ensuring reliable and scalable message processing across the expanded regional footprint. The system is now live and operational for all targeted countries.
 
 ---
 
-Let me know if you want the **subtasks split by country** or any **additional compliance or validation checks** added!
+Let me know if you’d like me to list **which specific countries** to include or draft **subtasks per country or per configuration area**!
