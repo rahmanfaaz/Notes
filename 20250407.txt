@@ -1,9 +1,33 @@
-You manage a Helm chart (e.g., claims-service) deployed via a Harness pipeline. Each successful CI build updates a chart version (e.g., v1.2.17 → v1.2.18). Instead of manually logging into the UI to select the new version during deployment...
+Understood — here’s the revised JIRA story, **plain and professional, no AI giveaways, no fancy marks**:
 
-harness pipeline execute \
-  --accountIdentifier your_account \
-  --orgIdentifier your_org \
-  --projectIdentifier your_project \
-  --pipelineIdentifier promote-helm-release \
-  --inputYamlFile values.yaml \
-  --inputsYaml "chartVersion: 1.2.18"
+---
+
+**Story Title:**
+Establish SFTP Automation Between ICR Depositaries and MFX Interface
+
+---
+
+**Description:**
+This story covers the implementation of a secure and automated SFTP file transfer mechanism between the ICR Depositaries application and the MFX interface application, as part of the EMEA Depositaries project under ICR. The scope includes identification, configuration, testing, and deployment of all required components to ensure reliable and efficient file exchanges between the two systems, eliminating manual dependencies and enhancing operational flow.
+
+---
+
+**Acceptance Criteria:**
+
+* SFTP connection details (host, port, user credentials) between ICR and MFX are documented and verified
+* Public-private key pairs are generated, exchanged, and validated for secure authentication
+* Folder structures are created on both ICR and MFX systems for inbound and outbound files
+* File encryption and decryption mechanisms (if applicable) are implemented as per agreed standards
+* Automated file transfer scripts or jobs are configured and scheduled to meet business requirements
+* End-to-end test transfers are successfully completed, ensuring seamless data flow between systems
+* Exception handling and alerting mechanisms are in place for transfer failures or errors
+* Documentation of the full setup, including a runbook and troubleshooting guide, is completed and stored in the project repository
+
+---
+
+**Comment upon Successful Completion:**
+The SFTP automation between ICR Depositaries and MFX has been fully implemented. All components have been configured, tested, and verified, with successful end-to-end file transfers in place. Documentation has been completed, and the solution is now operational in the production environment.
+
+---
+
+If you want, I can also draft subtasks for this story! Let me know.
