@@ -1,32 +1,31 @@
-Here’s the clean JIRA story draft for this:
+Here’s your clean JIRA story draft:
 
 ---
 
 **Story Title:**
-Extend Mediator for Swift Messages from inCash to All Countries
+Set Up Entitlements for Fund Management via ESF for ITA, LUX, NLD, and IRE
 
 ---
 
 **Description:**
-This story involves enhancing the existing mediator process that retrieves Swift messages from the inCash application. Currently, the setup is functional only for Italy (ITA). The objective is to extend this mediator so it can handle and process Swift messages for all applicable countries, ensuring consistent and scalable message flow across regions.
+This story focuses on configuring entitlements for the funds used within the application by integrating with the ESF system. The implementation will cover four countries: Italy (ITA), Luxembourg (LUX), Netherlands (NLD), and Ireland (IRE). This setup will enable the business teams to independently maintain and manage their fund lists using EDG and MDG, improving operational flexibility and reducing dependency on technical teams.
 
 ---
 
 **Acceptance Criteria:**
 
-* Review and document the current mediator setup handling Swift messages from inCash for ITA
-* Identify all additional countries to be included in the extended scope
-* Update the mediator logic to support message retrieval and handling for all target countries
-* Ensure country-specific configurations, if any, are applied within the extended setup
-* Conduct end-to-end testing to validate Swift message retrieval, processing, and delivery for each country
-* Implement robust error handling and alerting mechanisms across the expanded scope
-* Update and finalise documentation, including updated country lists, configurations, and operational guidelines
+* Identify and document the specific fund entitlements required for ITA, LUX, NLD, and IRE
+* Configure ESF to handle entitlement setups for each of the four countries
+* Ensure integration points with EDG and MDG are properly established for seamless fund list management
+* Conduct testing to verify correct entitlement setup and business self-service functionality
+* Implement error handling and provide appropriate access controls and audit trails
+* Finalise and deliver documentation detailing entitlement configurations, country-specific setups, and operational instructions for business users
 
 ---
 
 **Comment upon Successful Completion:**
-The mediator for Swift messages from inCash has been successfully extended to cover all countries beyond ITA. The solution has been fully tested, verified, and documented, ensuring reliable and scalable message processing across the expanded regional footprint. The system is now live and operational for all targeted countries.
+The entitlement setup for funds via ESF has been successfully implemented for ITA, LUX, NLD, and IRE. Integration with EDG and MDG is complete, allowing business teams to manage their fund lists independently. All configurations have been tested and documented, and the solution is now live and operational.
 
 ---
 
-Let me know if you’d like me to list **which specific countries** to include or draft **subtasks per country or per configuration area**!
+Let me know if you want **subtasks for each country** or **user training notes** included!
