@@ -1,33 +1,32 @@
-Understood — here’s the revised JIRA story, **plain and professional, no AI giveaways, no fancy marks**:
+Here’s the clean, professional JIRA story draft for that:
 
 ---
 
 **Story Title:**
-Establish SFTP Automation Between ICR Depositaries and MFX Interface
+Implement TNA Data Fetch from MDB and Delivery via MFX for Closed Funds
 
 ---
 
 **Description:**
-This story covers the implementation of a secure and automated SFTP file transfer mechanism between the ICR Depositaries application and the MFX interface application, as part of the EMEA Depositaries project under ICR. The scope includes identification, configuration, testing, and deployment of all required components to ensure reliable and efficient file exchanges between the two systems, eliminating manual dependencies and enhancing operational flow.
+This story focuses on setting up the data integration to fetch Total Net Assets (TNA) data from the MDB application. Whenever a fund is marked as closed, the corresponding TNA data should be extracted from MDB and securely transmitted to the destination system using the MFX interface. This ensures accurate and timely delivery of TNA figures for closed funds, supporting downstream processes and reporting.
 
 ---
 
 **Acceptance Criteria:**
 
-* SFTP connection details (host, port, user credentials) between ICR and MFX are documented and verified
-* Public-private key pairs are generated, exchanged, and validated for secure authentication
-* Folder structures are created on both ICR and MFX systems for inbound and outbound files
-* File encryption and decryption mechanisms (if applicable) are implemented as per agreed standards
-* Automated file transfer scripts or jobs are configured and scheduled to meet business requirements
-* End-to-end test transfers are successfully completed, ensuring seamless data flow between systems
-* Exception handling and alerting mechanisms are in place for transfer failures or errors
-* Documentation of the full setup, including a runbook and troubleshooting guide, is completed and stored in the project repository
+* Identify and document the specific TNA data points required from MDB for closed funds
+* Develop and implement a mechanism to extract TNA data from MDB upon fund closure
+* Ensure the extracted data is formatted according to MFX transmission requirements
+* Configure the MFX interface to securely deliver the TNA data to the destination system
+* Conduct end-to-end testing to verify accurate extraction, formatting, and delivery of TNA data
+* Implement error handling and alerting mechanisms for any extraction or transmission failures
+* Complete documentation of the integration process, including mappings, scheduling, and troubleshooting guidelines
 
 ---
 
 **Comment upon Successful Completion:**
-The SFTP automation between ICR Depositaries and MFX has been fully implemented. All components have been configured, tested, and verified, with successful end-to-end file transfers in place. Documentation has been completed, and the solution is now operational in the production environment.
+The integration for fetching TNA data from MDB and delivering it via MFX for closed funds has been successfully implemented. The solution has been tested end-to-end, ensuring accurate data extraction, proper formatting, and secure delivery. All documentation has been completed, and the process is now fully operational.
 
 ---
 
-If you want, I can also draft subtasks for this story! Let me know.
+Let me know if you want me to draft a **related technical task** or **subtasks** under this story!
