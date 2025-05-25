@@ -1,34 +1,18 @@
-Thank you for the clarification! Here’s the corrected and polished JIRA story reflecting **WM11** (instead of WM1):
+Here’s a polished closing comment you can use to formally mark this theme as complete:
 
 ---
 
-**Story Title:**
-ICR\_NGC || Depositaries EMEA || Recreate the FX Rates Report for WM11, Currently Generated from FDR
+**Theme Closure Comment:**
+The theme **“ICR\_NGC || Depositaries EMEA || Cashflow Monitoring Automation”** has been successfully completed. All four pipelines (PSC, TNA, GLA, FX) have been fully automated using Snowflake for data warehousing and Azure for cloud services.
+
+The following outcomes have been achieved:
+
+* Pipeline automation: Each pipeline is now reliably exporting data into Snowflake, meeting the defined accuracy and completeness standards.
+* Integration: Azure DevOps pipelines have been successfully set up and integrated, ensuring real-time data synchronisation between Snowflake and Azure.
+* Performance improvements: The automated pipelines have delivered measurable gains in processing efficiency, reducing manual intervention and overall processing time.
+
+All acceptance criteria have been met, rigorous testing and validation have been completed, and the final solution has been documented and handed over to stakeholders. The automation framework is now live and operational, supporting ongoing business needs with enhanced reliability and scalability.
 
 ---
 
-**Description:**
-This story involves the full redevelopment of the FX Rates Report for WM11 within the ICR\_NGC system, which is presently sourced and generated via the FDR platform. The objective is to replicate and enhance this report within ICR\_NGC, ensuring it meets all current business, data, and compliance requirements while providing improved system efficiency, maintainability, and reporting accuracy.
-
-This initiative plays a vital role in reducing reliance on legacy systems, thereby strengthening the robustness and resilience of the EMEA Depositaries reporting suite and supporting future scalability.
-
----
-
-**Acceptance Criteria:**
-
-* Conduct a comprehensive analysis of the existing FX Rates Report for WM11 generated from FDR, detailing data sources, logic, and output structures
-* Design and implement the equivalent report within ICR\_NGC, ensuring parity with all critical business functions and data points
-* Perform detailed reconciliations to validate the accuracy, completeness, and integrity of the new report against the legacy FDR version
-* Ensure that the new reporting solution adheres to all applicable regulatory, compliance, and audit standards
-* Execute thorough regression and integration testing to confirm no adverse impact on related systems or reporting outputs
-* Coordinate with business users to carry out user acceptance testing (UAT) and obtain formal sign-off on the recreated report
-* Deliver complete technical and functional documentation, including implementation details, validation results, and user instructions
-
----
-
-**Comment upon Successful Completion:**
-The FX Rates Report for WM11 has been successfully recreated within ICR\_NGC, fully replacing the version previously sourced from FDR. The solution has been rigorously tested, reconciled, and validated, ensuring complete alignment with business and regulatory requirements. Stakeholder review and formal sign-off have been achieved, and the solution is now live, with comprehensive documentation finalised and archived.
-
----
-
-If you’d like, I can also prepare **stakeholder communication drafts** or **release summary notes** to accompany this delivery — just let me know!
+If you want, I can also draft a **formal email announcement** or **stakeholder summary note** to communicate this closure. Let me know!
