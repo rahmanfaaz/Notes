@@ -1,65 +1,58 @@
-✅ Here’s a fully fleshed-out JIRA story for:
-**ICR\_DEP || Claims Engine || Database Handling Workflow Between Claims Queue / Manager**
+✅ Here’s a polished JIRA story draft for:
+**ICR\_DEP || Claims Engine || Source IBIS Interest Statements from Custody**
 
 ---
 
 ### 🏷 JIRA Story
 
 **Title:**
-ICR\_DEP || Claims Engine || Database Handling Workflow Between Claims Queue / Manager
+ICR\_DEP || Claims Engine || Source IBIS Interest Statements from Custody
 
 ---
 
 **Description:**
-As a backend developer, I need to implement the database logic that governs how claims transition between the Claims Queue (for initial triage) and the Claims Manager (for investigation), ensuring that accepted, rejected, or reinstated claims follow the correct lifecycle stages. This includes moving data between the relevant Snowflake tables (CLAIMS\_QUEUE, CLAIMS\_MANAGER, CLAIMS\_MASTER) and maintaining audit logs, so the claims system remains consistent, traceable, and aligned with business rules.
+As a developer, I need to implement the logic to source IBIS interest statements from the custody system so that the Claims Engine can accurately reconcile interest amounts and support downstream claims validation.
+
+This will enable the system to pull custody interest data, integrate it into the claims processing workflow, and ensure consistency between IBIS and claims records.
 
 ---
 
 **Acceptance Criteria:**
-✅ When a claim is accepted from the queue:
-
-* It is deleted from CLAIMS\_QUEUE.
-* A new entry is inserted into CLAIMS\_MANAGER with status `NEW`.
-* CLAIMS\_MASTER is updated with status `ACCEPTED`.
-* An entry is logged in CLAIMS\_QUEUE\_AUDIT recording the change.
-
-✅ When a claim is rejected from the queue:
-
-* It is deleted from CLAIMS\_QUEUE.
-* CLAIMS\_MASTER is updated with status `REJECTED`.
-* An entry is logged in CLAIMS\_QUEUE\_AUDIT.
-
-✅ When a previously rejected claim is reinstated:
-
-* It is inserted back into CLAIMS\_QUEUE with status `OUTSTANDING`.
-* CLAIMS\_MASTER is updated with status `OUTSTANDING`.
-* An entry is logged in CLAIMS\_QUEUE\_AUDIT.
-
-✅ All data movement:
-
-* Is atomic (if any part fails, rollback all changes).
-* Uses CEID (Claims Engine ID) as the primary reference.
-* Can handle both single and multiple claim IDs.
-* Captures `changed_by`, `reason`, and `timestamp` in audit records.
-
-✅ Error handling:
-
-* Gracefully logs and reports database or transaction errors.
-* Prevents partial updates.
-
-✅ Performance:
-
-* Supports bulk actions efficiently (e.g., hundreds of claims at once).
+✅ Custody system connectivity is established (SFTP, API, or data pipeline).
+✅ IBIS interest statements are successfully extracted in the required format.
+✅ Data is loaded into a staging table or directly into the relevant Snowflake schema.
+✅ Data mapping and field transformations are documented and applied.
+✅ Historical and incremental loads are both supported (with timestamp or batch tracking).
+✅ Data quality checks are implemented (e.g., completeness, validity of amounts, correct dates).
+✅ Error handling is in place for failed or partial loads.
+✅ The solution integrates into the overall Claims Engine pipeline and is visible to downstream processes.
 
 ---
 
-**Relevant Technical Info:**
+**Technical Details:**
 
-* Snowflake tables: `CLAIMS_QUEUE`, `CLAIMS_MANAGER`, `CLAIMS_MASTER`, `CLAIMS_QUEUE_AUDIT`, `CLAIMS_MANAGER_AUDIT`.
-* Stored procedures involved: `proc_accept_claims`, `proc_reject_claims`, `proc_reinstate_claims`.
-* Status values: OUTSTANDING, ACCEPTED, REJECTED, NEW, UNDER\_INVESTIGATION, CLOSED.
+* Source: Custody system providing IBIS interest statements.
+* Destination: Snowflake `CLAIMS_IBIS_INTEREST` (or similar) staging table.
+* Format: Expected file type (CSV, JSON, XML) or API response format.
+* Frequency: Define (daily, weekly, monthly) based on business needs.
+* Fields: Include principal, interest, currency, date range, account identifiers.
 
 ---
 
-👉 Let me know if you want this written into a JIRA `.csv` export or formatted for direct JIRA upload!
-Just say **“prepare export”** and tell me your preferred format 🚀.
+**Tasks:**
+☐ Confirm custody data access method and credentials.
+☐ Develop extraction pipeline or script.
+☐ Create and deploy staging table/schema in Snowflake.
+☐ Build transformation and mapping logic.
+☐ Conduct sample loads and validate outputs.
+☐ Write integration tests and define monitoring/alerts.
+☐ Document the solution for operations and support.
+
+---
+
+**Labels:**
+`backend` `claims-engine` `custody-integration` `ibis` `data-pipeline`
+
+---
+
+👉 Let me know if you want this as a **formatted JIRA-ready Markdown** or **Confluence page version** — I can generate it for immediate paste-in! 🚀
