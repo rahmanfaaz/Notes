@@ -1,52 +1,55 @@
-CREATE OR REPLACE PROCEDURE SFDB_D_ICR_DEP_DW.ODS_DEP_DW.proc_accept_claims(
-    claim_ids_str STRING,   -- e.g., '''CLAIM001'', ''CLAIM002'', ''CLAIM003'''
-    changed_by STRING,
-    reason STRING
-)
-RETURNS STRING
-LANGUAGE SQL
-EXECUTE AS CALLER
-AS '
-BEGIN
-    -- Insert into manager request
-    EXECUTE IMMEDIATE
-    ''INSERT INTO SFDB_D_ICR_DEP_DW.ODS_DEP_DW.CLAIMS_MANAGER_REQUEST
-      SELECT
-          CEID, CLIENT_ID, CLIENT, CLAIM_TYPE, FUND_ID, CUSTODY_ACCOUNT_NO, CUSTODIAN_NAME,
-          CLAIM_DATE, CLAIM_ENG_GEN_DATE, CLAIM_ENG_GEN_TIME, AGE, AGE_SETTLEMENT, INITIATOR,
-          LOCAL_AMOUNT, LOCAL_CURRENCY, AMOUNT_TOTAL_USD, ''NEW'', AGE_OF_CLAIM, LIABLE_PARTY,
-          LIABLE_PARTY_SUGGESTION, LIABLE_PARTY_CONTACT, LIABLE_PARTY_ESCALATION_CONTACT,
-          LATEST_COMMENTS, KINGFIELD_COMMENT, LAST_ACTIONED_DATE, NEXT_ACTION_DATE,
-          ACTUAL_SETTLEMENT_DATE, REFERENCE_SOURCE, NEXT_OWNER, AMOUNT_CATEGORY_USD_EQ,
-          AGE_CATEGORY, CLAIMS_ANALYST, CLAIMS_MANAGER, '''' || :changed_by || '''', EXCEPTION_CODE,
-          CURRENT_TIMESTAMP, RECEIVED_MODE, CLAIM_SOURCE, ERROR_MESSAGE
-      FROM SFDB_D_ICR_DEP_DW.ODS_DEP_DW.CLAIMS_MASTER
-      WHERE CEID IN ('' || :claim_ids_str || '')'';
+✅ Got it — you want help drafting the **JIRA story details** for:
 
-    -- Delete from queue request
-    EXECUTE IMMEDIATE
-    ''DELETE FROM SFDB_D_ICR_DEP_DW.ODS_DEP_DW.CLAIMS_QUEUE_REQUEST
-      WHERE CEID IN ('' || :claim_ids_str || '')'';
+> **Create a Unique ID for every Claim that is ingested (CEID → Claims Engine ID)**
 
-    -- Update master record status
-    EXECUTE IMMEDIATE
-    ''UPDATE SFDB_D_ICR_DEP_DW.ODS_DEP_DW.CLAIMS_MASTER
-      SET STATUS = ''''ACCEPTED'''', UPDATED_USER = '''' || :changed_by || '''', UPDATED_TIME = CURRENT_TIMESTAMP
-      WHERE CEID IN ('' || :claim_ids_str || '')'';
+Here’s a properly written JIRA story for this.
 
-    -- Insert audit record
-    EXECUTE IMMEDIATE
-    ''INSERT INTO SFDB_D_ICR_DEP_DW.ODS_DEP_DW.CLAIMS_QUEUE_AUDIT
-      SELECT
-          UUID_STRING(), q.STATUS, ''''ACCEPTED'''', '''' || :changed_by || '''', CURRENT_TIMESTAMP, '''' || :reason || '''',
-          q.CEID, q.CLIENT_ID, q.CLIENT, q.CLAIM_TYPE, q.FUND_ID, q.CUSTODY_ACCOUNT_NO, q.CUSTODIAN_NAME,
-          q.CLAIM_DATE, q.CLAIM_ENG_GEN_DATE, q.CLAIM_ENG_GEN_TIME, q.AGE, q.INITIATOR,
-          q.LOCAL_AMOUNT, q.LOCAL_CURRENCY, q.AMOUNT_TOTAL_USD, q.STATUS, q.LATEST_COMMENTS,
-          q.HISTORICAL_COMMENTS, q.UPDATED_USER, q.EXCEPTION_CODE, q.UPDATED_TIME, q.RECEIVED_MODE,
-          q.CLAIM_SOURCE, q.ERROR_MESSAGE
-      FROM SFDB_D_ICR_DEP_DW.ODS_DEP_DW.CLAIMS_QUEUE_REQUEST q
-      WHERE q.CEID IN ('' || :claim_ids_str || '')'';
+---
 
-    RETURN ''ACCEPT action completed for provided claim IDs'';
-END;
-';
+### 🏷 JIRA Story
+
+**Title:**
+ICR\_DEP || Claims Engine || Create a Unique ID for every Claim that is ingested (CEID → Claims Engine ID)
+
+---
+
+**Description:**
+As a system, I need to generate a unique Claim Engine ID (CEID) every time a new claim is ingested into the system, so that each claim can be uniquely tracked across the Claims Engine lifecycle.
+
+---
+
+**Acceptance Criteria:**
+✅ On ingest, each new claim is assigned a unique CEID (Claims Engine ID).
+✅ CEID follows a defined format (e.g., ‘CLM’ + padded numeric or UUID).
+✅ CEID is stored in the CLAIMS\_MASTER table.
+✅ CEID is referenced consistently in CLAIMS\_QUEUE, CLAIMS\_MANAGER, and all audit tables.
+✅ No duplicate CEIDs are allowed; uniqueness is guaranteed at the database level.
+✅ Ingestion fails gracefully if CEID generation encounters an error.
+
+---
+
+**Technical Details:**
+
+* Use `UUID_STRING()` or a Snowflake sequence to generate CEID.
+* Prefix with ‘CLM’ or system-specific prefix as required.
+* Incorporate CEID generation into the `proc_ingest_claim` procedure.
+* Ensure downstream SPs and queries consume CEID consistently.
+
+---
+
+**Tasks:**
+☐ Update CLAIMS\_MASTER table schema to include CEID as primary or unique key.
+☐ Implement CEID generation logic in ingestion procedure.
+☐ Update existing procedures and queries to use CEID instead of just raw CLAIM\_ID.
+☐ Test insertion of multiple claims and confirm CEID uniqueness.
+☐ Add unit tests and integration tests for CEID generation.
+
+---
+
+**Labels:**
+`backend` `claims-engine` `snowflake` `unique-id` `ceid`
+
+---
+
+👉 Want me to draft the **SQL snippet** or **stored procedure update** for CEID generation?
+Just say **“yes, write the SQL block”** and I’ll prepare it! 🚀
