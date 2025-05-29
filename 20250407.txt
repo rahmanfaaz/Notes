@@ -1,58 +1,52 @@
-✅ Here’s a polished JIRA story draft for:
-**ICR\_DEP || Claims Engine || Source IBIS Interest Statements from Custody**
+CREATE OR REPLACE PROCEDURE SFDB_D_ICR_DEP_DW.ODS_DEP_DW.INSERT_TO_MANAGER(
+    INPUT_CLAIM_ID STRING   -- e.g., 'CLM0001,CLM0002'
+)
+RETURNS STRING
+LANGUAGE SQL
+AS
+$$
+DECLARE
+    inserted_count NUMBER;
+BEGIN
+    -- Insert matching claims into CLAIMS_MANAGER
+    INSERT INTO SFDB_D_ICR_DEP_DW.ODS_DEP_DW.CLAIMS_MANAGER_REQUEST (
+        CEID, CLIENT_ID, CLIENT, CLAIM_TYPE, FUND_ID, 
+        CUSTODY_ACCOUNT_NO, CUSTODIAN_NAME, CLAIM_DATE, 
+        CLAIM_ENG_GEN_DATE, CLAIM_ENG_GEN_TIME, AGE, 
+        AGE_SETTLEMENT, INITIATOR, LOCAL_AMOUNT, 
+        LOCAL_CURRENCY, AMOUNT_TOTAL_USD, STATUS, 
+        AGE_OF_CLAIM, LIABLE_PARTY, LIABLE_PARTY_SUGGESTION, 
+        LIABLE_PARTY_CONTACT, LIABLE_PARTY_ESCALATION_CONTACT, 
+        LATEST_COMMENTS, KINGFIELD_COMMENT, LAST_ACTIONED_DATE, 
+        NEXT_ACTION_DATE, ACTUAL_SETTLEMENT_DATE, REFERENCE_SOURCE, 
+        NEXT_OWNER, AMOUNT_CATEGORY_USD_EQ, AGE_CATEGORY, 
+        CLAIMS_ANALYST, CLAIMS_MANAGER, UPDATED_USER, 
+        EXCEPTION_CODE, UPDATED_TIME, RECEIVED_MODE, 
+        CLAIM_SOURCE, ERROR_MESSAGE
+    )
+    SELECT 
+        CEID, CLIENT_ID, CLIENT, CLAIM_TYPE, FUND_ID, 
+        CUSTODY_ACCOUNT_NO, CUSTODIAN_NAME, CLAIM_DATE, 
+        CLAIM_ENG_GEN_DATE, CLAIM_ENG_GEN_TIME, AGE, 
+        AGE_SETTLEMENT, INITIATOR, LOCAL_AMOUNT, 
+        LOCAL_CURRENCY, AMOUNT_TOTAL_USD, 'NEW',   -- set STATUS to 'NEW'
+        AGE_OF_CLAIM, LIABLE_PARTY, LIABLE_PARTY_SUGGESTION, 
+        LIABLE_PARTY_CONTACT, LIABLE_PARTY_ESCALATION_CONTACT, 
+        LATEST_COMMENTS, KINGFIELD_COMMENT, LAST_ACTIONED_DATE, 
+        NEXT_ACTION_DATE, ACTUAL_SETTLEMENT_DATE, REFERENCE_SOURCE, 
+        NEXT_OWNER, AMOUNT_CATEGORY_USD_EQ, AGE_CATEGORY, 
+        CLAIMS_ANALYST, CLAIMS_MANAGER, UPDATED_USER, 
+        EXCEPTION_CODE, CURRENT_TIMESTAMP, RECEIVED_MODE, 
+        CLAIM_SOURCE, ERROR_MESSAGE
+    FROM SFDB_D_ICR_DEP_DW.ODS_DEP_DW.CLAIMS_MASTER
+    WHERE CEID IN (
+        SELECT VALUE
+        FROM TABLE(FLATTEN(SPLIT(:INPUT_CLAIM_ID, ',')))
+    );
 
----
+    -- Count inserted rows
+    GET DIAGNOSTICS inserted_count = ROW_COUNT;
 
-### 🏷 JIRA Story
-
-**Title:**
-ICR\_DEP || Claims Engine || Source IBIS Interest Statements from Custody
-
----
-
-**Description:**
-As a developer, I need to implement the logic to source IBIS interest statements from the custody system so that the Claims Engine can accurately reconcile interest amounts and support downstream claims validation.
-
-This will enable the system to pull custody interest data, integrate it into the claims processing workflow, and ensure consistency between IBIS and claims records.
-
----
-
-**Acceptance Criteria:**
-✅ Custody system connectivity is established (SFTP, API, or data pipeline).
-✅ IBIS interest statements are successfully extracted in the required format.
-✅ Data is loaded into a staging table or directly into the relevant Snowflake schema.
-✅ Data mapping and field transformations are documented and applied.
-✅ Historical and incremental loads are both supported (with timestamp or batch tracking).
-✅ Data quality checks are implemented (e.g., completeness, validity of amounts, correct dates).
-✅ Error handling is in place for failed or partial loads.
-✅ The solution integrates into the overall Claims Engine pipeline and is visible to downstream processes.
-
----
-
-**Technical Details:**
-
-* Source: Custody system providing IBIS interest statements.
-* Destination: Snowflake `CLAIMS_IBIS_INTEREST` (or similar) staging table.
-* Format: Expected file type (CSV, JSON, XML) or API response format.
-* Frequency: Define (daily, weekly, monthly) based on business needs.
-* Fields: Include principal, interest, currency, date range, account identifiers.
-
----
-
-**Tasks:**
-☐ Confirm custody data access method and credentials.
-☐ Develop extraction pipeline or script.
-☐ Create and deploy staging table/schema in Snowflake.
-☐ Build transformation and mapping logic.
-☐ Conduct sample loads and validate outputs.
-☐ Write integration tests and define monitoring/alerts.
-☐ Document the solution for operations and support.
-
----
-
-**Labels:**
-`backend` `claims-engine` `custody-integration` `ibis` `data-pipeline`
-
----
-
-👉 Let me know if you want this as a **formatted JIRA-ready Markdown** or **Confluence page version** — I can generate it for immediate paste-in! 🚀
+    RETURN 'Inserted ' || inserted_count || ' claims into CLAIMS_MANAGER';
+END;
+$$;
