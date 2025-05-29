@@ -1,55 +1,65 @@
-✅ Got it — you want help drafting the **JIRA story details** for:
-
-> **Create a Unique ID for every Claim that is ingested (CEID → Claims Engine ID)**
-
-Here’s a properly written JIRA story for this.
+✅ Here’s a fully fleshed-out JIRA story for:
+**ICR\_DEP || Claims Engine || Database Handling Workflow Between Claims Queue / Manager**
 
 ---
 
 ### 🏷 JIRA Story
 
 **Title:**
-ICR\_DEP || Claims Engine || Create a Unique ID for every Claim that is ingested (CEID → Claims Engine ID)
+ICR\_DEP || Claims Engine || Database Handling Workflow Between Claims Queue / Manager
 
 ---
 
 **Description:**
-As a system, I need to generate a unique Claim Engine ID (CEID) every time a new claim is ingested into the system, so that each claim can be uniquely tracked across the Claims Engine lifecycle.
+As a backend developer, I need to implement the database logic that governs how claims transition between the Claims Queue (for initial triage) and the Claims Manager (for investigation), ensuring that accepted, rejected, or reinstated claims follow the correct lifecycle stages. This includes moving data between the relevant Snowflake tables (CLAIMS\_QUEUE, CLAIMS\_MANAGER, CLAIMS\_MASTER) and maintaining audit logs, so the claims system remains consistent, traceable, and aligned with business rules.
 
 ---
 
 **Acceptance Criteria:**
-✅ On ingest, each new claim is assigned a unique CEID (Claims Engine ID).
-✅ CEID follows a defined format (e.g., ‘CLM’ + padded numeric or UUID).
-✅ CEID is stored in the CLAIMS\_MASTER table.
-✅ CEID is referenced consistently in CLAIMS\_QUEUE, CLAIMS\_MANAGER, and all audit tables.
-✅ No duplicate CEIDs are allowed; uniqueness is guaranteed at the database level.
-✅ Ingestion fails gracefully if CEID generation encounters an error.
+✅ When a claim is accepted from the queue:
+
+* It is deleted from CLAIMS\_QUEUE.
+* A new entry is inserted into CLAIMS\_MANAGER with status `NEW`.
+* CLAIMS\_MASTER is updated with status `ACCEPTED`.
+* An entry is logged in CLAIMS\_QUEUE\_AUDIT recording the change.
+
+✅ When a claim is rejected from the queue:
+
+* It is deleted from CLAIMS\_QUEUE.
+* CLAIMS\_MASTER is updated with status `REJECTED`.
+* An entry is logged in CLAIMS\_QUEUE\_AUDIT.
+
+✅ When a previously rejected claim is reinstated:
+
+* It is inserted back into CLAIMS\_QUEUE with status `OUTSTANDING`.
+* CLAIMS\_MASTER is updated with status `OUTSTANDING`.
+* An entry is logged in CLAIMS\_QUEUE\_AUDIT.
+
+✅ All data movement:
+
+* Is atomic (if any part fails, rollback all changes).
+* Uses CEID (Claims Engine ID) as the primary reference.
+* Can handle both single and multiple claim IDs.
+* Captures `changed_by`, `reason`, and `timestamp` in audit records.
+
+✅ Error handling:
+
+* Gracefully logs and reports database or transaction errors.
+* Prevents partial updates.
+
+✅ Performance:
+
+* Supports bulk actions efficiently (e.g., hundreds of claims at once).
 
 ---
 
-**Technical Details:**
+**Relevant Technical Info:**
 
-* Use `UUID_STRING()` or a Snowflake sequence to generate CEID.
-* Prefix with ‘CLM’ or system-specific prefix as required.
-* Incorporate CEID generation into the `proc_ingest_claim` procedure.
-* Ensure downstream SPs and queries consume CEID consistently.
-
----
-
-**Tasks:**
-☐ Update CLAIMS\_MASTER table schema to include CEID as primary or unique key.
-☐ Implement CEID generation logic in ingestion procedure.
-☐ Update existing procedures and queries to use CEID instead of just raw CLAIM\_ID.
-☐ Test insertion of multiple claims and confirm CEID uniqueness.
-☐ Add unit tests and integration tests for CEID generation.
+* Snowflake tables: `CLAIMS_QUEUE`, `CLAIMS_MANAGER`, `CLAIMS_MASTER`, `CLAIMS_QUEUE_AUDIT`, `CLAIMS_MANAGER_AUDIT`.
+* Stored procedures involved: `proc_accept_claims`, `proc_reject_claims`, `proc_reinstate_claims`.
+* Status values: OUTSTANDING, ACCEPTED, REJECTED, NEW, UNDER\_INVESTIGATION, CLOSED.
 
 ---
 
-**Labels:**
-`backend` `claims-engine` `snowflake` `unique-id` `ceid`
-
----
-
-👉 Want me to draft the **SQL snippet** or **stored procedure update** for CEID generation?
-Just say **“yes, write the SQL block”** and I’ll prepare it! 🚀
+👉 Let me know if you want this written into a JIRA `.csv` export or formatted for direct JIRA upload!
+Just say **“prepare export”** and tell me your preferred format 🚀.
