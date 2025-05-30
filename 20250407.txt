@@ -1,18 +1,46 @@
-SELECT 
-    ROOT.KEY AS ROOT_NAME,
-    CHILD.VALUE:CEID::STRING AS CEID,
-    CHILD.VALUE:CLIENT_ID::STRING AS CLIENT_ID,
-    CHILD.VALUE:USER_NAME::STRING AS USER_NAME,
-    CHILD.VALUE:COMMENT::STRING AS COMMENT
-FROM TABLE(FLATTEN(INPUT => PARSE_JSON('{
-    "Root1": [
-        { "CEID": "CLM0001", "CLIENT_ID": "CLIENT_A", "USER_NAME": "api_user_faaz", "COMMENT": "Accepted after review" }
-    ],
-    "Root2": [
-        { "CEID": "CLM0002", "CLIENT_ID": "CLIENT_B", "USER_NAME": "api_user_faaz", "COMMENT": "Escalated to supervisor" }
-    ],
-    "Root3": [
-        { "CEID": "CLM0003", "CLIENT_ID": "CLIENT_C", "USER_NAME": "api_user_jane", "COMMENT": "Auto-closed due to timeout" }
-    ]
-}'))) AS ROOT,
-LATERAL FLATTEN(INPUT => ROOT.VALUE) AS CHILD;
+CREATE OR REPLACE PROCEDURE SFDB_D_ICR_DEP_DW.ODS_DEP_DW.proc_flatten_claims_json(
+    INPUT_PAYLOAD VARIANT
+)
+RETURNS STRING
+LANGUAGE SQL
+AS
+$$
+DECLARE
+    out_message STRING DEFAULT '';
+BEGIN
+    -- Flatten over root and children
+    FOR rec IN (
+        SELECT 
+            ROOT.KEY AS ROOT_NAME,
+            CHILD.VALUE:CEID::STRING AS CEID,
+            CHILD.VALUE:CLIENT_ID::STRING AS CLIENT_ID,
+            CHILD.VALUE:USER_NAME::STRING AS USER_NAME,
+            CHILD.VALUE:COMMENT::STRING AS COMMENT
+        FROM TABLE(FLATTEN(INPUT => INPUT_PAYLOAD)) AS ROOT,
+             LATERAL FLATTEN(INPUT => ROOT.VALUE) AS CHILD
+    )
+    DO
+        LET out_message = out_message || 
+            'ROOT: ' || rec.ROOT_NAME || 
+            ' | CEID: ' || rec.CEID || 
+            ' | CLIENT_ID: ' || rec.CLIENT_ID || 
+            ' | USER_NAME: ' || rec.USER_NAME || 
+            ' | COMMENT: ' || rec.COMMENT || '\n';
+    END FOR;
+
+    RETURN out_message;
+END;
+$$;
+CALL SFDB_D_ICR_DEP_DW.ODS_DEP_DW.proc_flatten_claims_json(
+    PARSE_JSON('{
+        "Root1": [
+            { "CEID": "CLM0001", "CLIENT_ID": "CLIENT_A", "USER_NAME": "api_user_faaz", "COMMENT": "Accepted after review" }
+        ],
+        "Root2": [
+            { "CEID": "CLM0002", "CLIENT_ID": "CLIENT_B", "USER_NAME": "api_user_faaz", "COMMENT": "Escalated to supervisor" }
+        ],
+        "Root3": [
+            { "CEID": "CLM0003", "CLIENT_ID": "CLIENT_C", "USER_NAME": "api_user_jane", "COMMENT": "Auto-closed due to timeout" }
+        ]
+    }')
+);
