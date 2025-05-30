@@ -1,38 +1,14 @@
 CREATE OR REPLACE PROCEDURE SFDB_D_ICR_DEP_DW.ODS_DEP_DW.TEST_PER_CEID_DETAILS(
     INPUT_PAYLOAD VARIANT
 )
-RETURNS STRING
+RETURNS TABLE (CEID STRING, USER_NAME STRING, COMMENT STRING, CLIENT_ID STRING)
 LANGUAGE SQL
 AS
 $$
-DECLARE
-    out_message STRING DEFAULT '';
-BEGIN
-    -- Loop over flattened input using RESULT SET
-    BEGIN
-        FOR rec IN (
-            SELECT
-                VALUE:CEID::STRING AS ceid,
-                VALUE:USER_NAME::STRING AS user_name,
-                COALESCE(VALUE:COMMENT::STRING, 'Accepted by batch') AS comment,
-                VALUE:CLIENT_ID::STRING AS client_id
-            FROM TABLE(FLATTEN(INPUT => INPUT_PAYLOAD))
-        )
-        DO
-            LET out_message = out_message || 
-                              'CEID: ' || rec.ceid || 
-                              ' | USER_NAME: ' || rec.user_name || 
-                              ' | COMMENT: ' || rec.comment || 
-                              ' | CLIENT_ID: ' || rec.client_id || '\n';
-        END FOR;
-    END;
-
-    RETURN out_message;
-END;
+    SELECT
+        VALUE:CEID::STRING AS CEID,
+        VALUE:USER_NAME::STRING AS USER_NAME,
+        COALESCE(VALUE:COMMENT::STRING, 'Accepted by batch') AS COMMENT,
+        VALUE:CLIENT_ID::STRING AS CLIENT_ID
+    FROM TABLE(FLATTEN(INPUT => INPUT_PAYLOAD));
 $$;
-
-
-CALL SFDB_D_ICR_DEP_DW.ODS_DEP_DW.TEST_PER_CEID_DETAILS(PARSE_JSON('[
-    { "CEID": "CLM0001", "USER_NAME": "api_user_faaz", "COMMENT": "Accepted after review", "CLIENT_ID": "CLIENTA" },
-    { "CEID": "CLM0002", "USER_NAME": "api_user_faaz", "CLIENT_ID": "CLIENTA" }
-]'));
