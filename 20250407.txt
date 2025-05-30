@@ -1,38 +1,18 @@
-WITH json_data AS (
-    SELECT PARSE_JSON('[
-        {
-            "person": {
-                "name": "John Doe",
-                "address": {
-                    "city": "London",
-                    "street": "Oxford Street"
-                },
-                "phone": [
-                    "Apple iPhone",
-                    "Google Pixel",
-                    "Samsung Galaxy"
-                ]
-            }
-        },
-        {
-            "person": {
-                "name": "Jane Smith",
-                "address": {
-                    "city": "New York",
-                    "street": "5th Avenue"
-                },
-                "phone": [
-                    "iPhone 14",
-                    "OnePlus 11"
-                ]
-            }
-        }
-    ]') AS data
-)
-
 SELECT 
-    flat.value:person:name::STRING AS name,
-    flat.value:person:address:city::STRING AS city,
-    flat.value:person:address:street::STRING AS street
-FROM json_data,
-     LATERAL FLATTEN(input => data) AS flat;
+    ROOT.KEY AS ROOT_NAME,
+    CHILD.VALUE:CEID::STRING AS CEID,
+    CHILD.VALUE:CLIENT_ID::STRING AS CLIENT_ID,
+    CHILD.VALUE:USER_NAME::STRING AS USER_NAME,
+    CHILD.VALUE:COMMENT::STRING AS COMMENT
+FROM TABLE(FLATTEN(INPUT => PARSE_JSON('{
+    "Root1": [
+        { "CEID": "CLM0001", "CLIENT_ID": "CLIENT_A", "USER_NAME": "api_user_faaz", "COMMENT": "Accepted after review" }
+    ],
+    "Root2": [
+        { "CEID": "CLM0002", "CLIENT_ID": "CLIENT_B", "USER_NAME": "api_user_faaz", "COMMENT": "Escalated to supervisor" }
+    ],
+    "Root3": [
+        { "CEID": "CLM0003", "CLIENT_ID": "CLIENT_C", "USER_NAME": "api_user_jane", "COMMENT": "Auto-closed due to timeout" }
+    ]
+}'))) AS ROOT,
+LATERAL FLATTEN(INPUT => ROOT.VALUE) AS CHILD;
