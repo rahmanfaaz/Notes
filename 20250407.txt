@@ -1,46 +1,104 @@
-CREATE OR REPLACE PROCEDURE SFDB_D_ICR_DEP_DW.ODS_DEP_DW.proc_flatten_claims_json(
-    INPUT_PAYLOAD VARIANT
-)
-RETURNS STRING
-LANGUAGE SQL
-AS
-$$
-DECLARE
-    out_message STRING DEFAULT '';
-BEGIN
-    -- Flatten over root and children
-    FOR rec IN (
-        SELECT 
-            ROOT.KEY AS ROOT_NAME,
-            CHILD.VALUE:CEID::STRING AS CEID,
-            CHILD.VALUE:CLIENT_ID::STRING AS CLIENT_ID,
-            CHILD.VALUE:USER_NAME::STRING AS USER_NAME,
-            CHILD.VALUE:COMMENT::STRING AS COMMENT
-        FROM TABLE(FLATTEN(INPUT => INPUT_PAYLOAD)) AS ROOT,
-             LATERAL FLATTEN(INPUT => ROOT.VALUE) AS CHILD
-    )
-    DO
-        LET out_message = out_message || 
-            'ROOT: ' || rec.ROOT_NAME || 
-            ' | CEID: ' || rec.CEID || 
-            ' | CLIENT_ID: ' || rec.CLIENT_ID || 
-            ' | USER_NAME: ' || rec.USER_NAME || 
-            ' | COMMENT: ' || rec.COMMENT || '\n';
-    END FOR;
+Absolutely! Here’s a **more detailed JIRA enhancement story** with additional sections, clarity, and technical/operational depth.
 
-    RETURN out_message;
-END;
-$$;
-CALL SFDB_D_ICR_DEP_DW.ODS_DEP_DW.proc_flatten_claims_json(
-    PARSE_JSON('{
-        "Root1": [
-            { "CEID": "CLM0001", "CLIENT_ID": "CLIENT_A", "USER_NAME": "api_user_faaz", "COMMENT": "Accepted after review" }
-        ],
-        "Root2": [
-            { "CEID": "CLM0002", "CLIENT_ID": "CLIENT_B", "USER_NAME": "api_user_faaz", "COMMENT": "Escalated to supervisor" }
-        ],
-        "Root3": [
-            { "CEID": "CLM0003", "CLIENT_ID": "CLIENT_C", "USER_NAME": "api_user_jane", "COMMENT": "Auto-closed due to timeout" }
-        ]
-    }')
-);
+---
+
+### **Story Title:**
+
+Enhance Prior Settled Cash Report to Include Backdated and Delta Transactions
+
+---
+
+### **Background:**
+
+Currently, the Prior Settled Cash Report is generated using data filtered by the `DDA_DATE` (Driving Date) column. This means the report only includes trades whose `DDA_DATE` matches the report date. However, when a trade is booked or modified after the report is delivered (for example, backdated trades or late adjustments), these are not automatically captured.
+
+**Example scenario:**
+
+* A trade with `DDA_DATE` 2025-05-23 is booked or modified on 2025-05-26.
+* The report for 2025-05-23 was already generated and delivered on 2025-05-24 at 3:00 AM EST.
+* The newly booked or adjusted trade is **missed** in the original report and requires **manual regeneration**.
+
+This gap results in incomplete reporting, operational inefficiency, and potential reconciliation issues.
+
+---
+
+### **Objective:**
+
+Modify the Prior Settled Cash Report logic to automatically include **delta transactions** — i.e., backdated or adjusted trades that were missed in prior report runs — in the next day’s report.
+
+---
+
+### **Proposed Enhancement:**
+
+When generating the report for a given day (e.g., 2025-05-26), the system should:
+✅ Include all trades with `DDA_DATE` = 2025-05-26 (current driving date logic).
+✅ Additionally, pull in any **delta trades** that were booked, modified, or adjusted between **2025-05-25 3:00 AM EST and 2025-05-26 3:00 AM EST**, even if their `DDA_DATE` is prior to the report date.
+
+This ensures that:
+
+* Backdated trades are automatically included in the next day’s delivery.
+* Manual reruns of prior-day reports are no longer needed.
+* Downstream systems receive a full and reconciled view.
+
+---
+
+### **Acceptance Criteria:**
+
+✅ The report includes:
+
+* All current-day trades (`DDA_DATE` = report date).
+* All trades with prior `DDA_DATE` values that were **booked, modified, or adjusted** since the last report run.
+
+✅ The system uses the **transaction timestamp** (e.g., `BOOKING_TIMESTAMP` or `LAST_MODIFIED_TIMESTAMP`) to identify relevant deltas.
+
+✅ The report output clearly distinguishes:
+
+* **Current-day transactions**.
+* **Delta/backdated transactions** (possibly via a flag or separate section).
+
+✅ All data is pulled within the defined window:
+
+* Start: Prior day at 3:00 AM EST.
+* End: Current day at 3:00 AM EST.
+
+✅ Performance and processing time are evaluated and do not materially degrade with the expanded logic.
+
+✅ All downstream consumers are informed of the change and understand the inclusion of backdated data.
+
+✅ Historical reconciliation is confirmed as part of UAT to ensure no prior gaps are missed.
+
+---
+
+### **Technical Considerations:**
+
+* Identify the correct system column for detecting late-booked or modified transactions.
+* Ensure ETL/SQL pipelines can efficiently query across `DDA_DATE` and transaction timestamps.
+* Review any report generation jobs or scheduling impacts.
+* Assess data volume increases due to delta inclusion and monitor runtime.
+* Update report schemas if a new flag or section is introduced to distinguish delta trades.
+
+---
+
+### **Operational Considerations:**
+
+* Notify Operations teams and downstream users (e.g., reconciliations, accounting, client services) about the change.
+* Provide updated documentation detailing the new report logic.
+* Develop a rollback plan in case of unforeseen issues post-deployment.
+
+---
+
+### **JIRA Checklist:**
+
+* [ ] Review and confirm requirements with Business and Operations stakeholders.
+* [ ] Identify the correct timestamp field for delta detection.
+* [ ] Update report generation logic to include delta window.
+* [ ] Perform unit tests to ensure correct data inclusion.
+* [ ] Conduct performance testing on expanded report logic.
+* [ ] Validate results in UAT with real backdated scenarios.
+* [ ] Update report documentation and user guides.
+* [ ] Communicate changes to all impacted teams.
+* [ ] Deploy to production following change management procedures.
+
+---
+
+Would you like me to also write **technical subtasks** for JIRA or draft a **business communication** explaining this enhancement to stakeholders? Let me know!
