@@ -1,14 +1,38 @@
-CREATE OR REPLACE PROCEDURE SFDB_D_ICR_DEP_DW.ODS_DEP_DW.TEST_PER_CEID_DETAILS(
-    INPUT_PAYLOAD VARIANT
+WITH json_data AS (
+    SELECT PARSE_JSON('[
+        {
+            "person": {
+                "name": "John Doe",
+                "address": {
+                    "city": "London",
+                    "street": "Oxford Street"
+                },
+                "phone": [
+                    "Apple iPhone",
+                    "Google Pixel",
+                    "Samsung Galaxy"
+                ]
+            }
+        },
+        {
+            "person": {
+                "name": "Jane Smith",
+                "address": {
+                    "city": "New York",
+                    "street": "5th Avenue"
+                },
+                "phone": [
+                    "iPhone 14",
+                    "OnePlus 11"
+                ]
+            }
+        }
+    ]') AS data
 )
-RETURNS TABLE (CEID STRING, USER_NAME STRING, COMMENT STRING, CLIENT_ID STRING)
-LANGUAGE SQL
-AS
-$$
-    SELECT
-        VALUE:CEID::STRING AS CEID,
-        VALUE:USER_NAME::STRING AS USER_NAME,
-        COALESCE(VALUE:COMMENT::STRING, 'Accepted by batch') AS COMMENT,
-        VALUE:CLIENT_ID::STRING AS CLIENT_ID
-    FROM TABLE(FLATTEN(INPUT => INPUT_PAYLOAD));
-$$;
+
+SELECT 
+    flat.value:person:name::STRING AS name,
+    flat.value:person:address:city::STRING AS city,
+    flat.value:person:address:street::STRING AS street
+FROM json_data,
+     LATERAL FLATTEN(input => data) AS flat;
