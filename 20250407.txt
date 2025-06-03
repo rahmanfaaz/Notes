@@ -1,14 +1,105 @@
+import React from "react";
+import {
+  Box,
+  Tabs,
+  Tab,
+  Typography,
+  Drawer,
+  IconButton,
+  Stack,
+  Button,
+  Fab
+} from "@mui/material";
+import CropSquareIcon from '@mui/icons-material/CropSquare';
+import CheckBoxOutlineBlankIcon from '@mui/icons-material/CheckBoxOutlineBlank';
+import RemoveIcon from '@mui/icons-material/Remove';
+import VisibilityIcon from '@mui/icons-material/Visibility';
 
+export default function ClaimsInspectorMockup() {
+  const [tabIndex, setTabIndex] = React.useState(0);
+  const [anchor, setAnchor] = React.useState('bottom'); // bottom, right, left
+  const [open, setOpen] = React.useState(true);
 
-Thank you for your message. I am presently out of the office and unable to respond at this time.
+  const handleTabChange = (event, newValue) => {
+    setTabIndex(newValue);
+  };
 
-For any urgent matters or assistance, please contact **Mr. Praveen Jetty**.
+  const handlePositionChange = (position) => {
+    setAnchor(position);
+    setOpen(true);
+  };
 
-I appreciate your understanding and will respond to your email upon my return.
+  const handleMinimize = () => {
+    setOpen(false);
+  };
 
-Best regards,
-Rahman Faaz
+  const handleRestore = () => {
+    setOpen(true);
+    setAnchor('bottom');
+  };
 
----
+  return (
+    <>
+      {!open && (
+        <Fab
+          color="primary"
+          aria-label="restore"
+          onClick={handleRestore}
+          sx={{ position: 'fixed', bottom: 16, right: 16 }}
+        >
+          <VisibilityIcon />
+        </Fab>
+      )}
 
-Let me know if you want to add **Praveen’s email or contact details** as well!
+      <Drawer
+        variant="persistent"
+        anchor={anchor}
+        open={open}
+        sx={{
+          width: anchor === 'left' || anchor === 'right' ? 400 : '100%',
+          height: anchor === 'bottom' ? 300 : '100%'
+        }}
+      >
+        <Box sx={{ width: "100%", p: 2 }}>
+          <Stack direction="row" justifyContent="flex-end" spacing={1}>
+            <IconButton onClick={() => handlePositionChange('bottom')}><CheckBoxOutlineBlankIcon /></IconButton>
+            <IconButton onClick={() => handlePositionChange('right')}><CropSquareIcon /></IconButton>
+            <IconButton onClick={handleMinimize}><RemoveIcon /></IconButton>
+          </Stack>
+
+          <Typography variant="h6" sx={{ mb: 2 }}>
+            Data Sources Inspector
+          </Typography>
+
+          <Tabs
+            value={tabIndex}
+            onChange={handleTabChange}
+            aria-label="data sources tabs"
+            centered
+          >
+            <Tab label="TLP Balance" />
+            <Tab label="TLP Transactions" />
+            <Tab label="IBIS Interest Statement" />
+            <Tab label="GTM Trade Commentary" />
+          </Tabs>
+
+          <Box hidden={tabIndex !== 0} sx={{ p: 2 }}>
+            <Typography variant="body1">Displaying TLP Balance data...</Typography>
+          </Box>
+
+          <Box hidden={tabIndex !== 1} sx={{ p: 2 }}>
+            <Typography variant="body1">Displaying TLP Transactions data...</Typography>
+          </Box>
+
+          <Box hidden={tabIndex !== 2} sx={{ p: 2 }}>
+            <Typography variant="body1">Displaying IBIS Interest Statement data...</Typography>
+          </Box>
+
+          <Box hidden={tabIndex !== 3} sx={{ p: 2 }}>
+            <Typography variant="body1">Displaying GTM Trade Commentary data...</Typography>
+          </Box>
+        </Box>
+      </Drawer>
+    </>
+  );
+}
