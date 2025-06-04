@@ -6,31 +6,37 @@ AS
 $$
 DECLARE
     result VARCHAR DEFAULT '';
-BEGIN
-    FOR record IN (
+    c1 CURSOR FOR
         SELECT key AS root_key, value AS claims
-        FROM TABLE(FLATTEN(input => PARSE_JSON(:json_input)))
-    )
-    DO
-        FOR claim IN (
+        FROM TABLE(FLATTEN(input => PARSE_JSON(:json_input)));
+    root_key VARCHAR;
+    claims VARIANT;
+BEGIN
+    OPEN c1;
+    LOOP
+        FETCH c1 INTO root_key, claims;
+        EXIT WHEN c1%NOTFOUND;
+
+        FOR claim_rec IN (
             SELECT 
                 value:CEID::VARCHAR AS ceid,
                 value:CLIENT_ID::VARCHAR AS client_id,
                 value:USER_NAME::VARCHAR AS user_name,
                 value:COMMENT::VARCHAR AS comment,
                 value:STATUS::VARCHAR AS status
-            FROM TABLE(FLATTEN(input => record.claims))
+            FROM TABLE(FLATTEN(input => claims))
         )
         DO
             result := result || 
-                'Root: ' || record.root_key || ', CEID: ' || claim.ceid ||
-                ', CLIENT_ID: ' || claim.client_id ||
-                ', USER_NAME: ' || claim.user_name ||
-                ', COMMENT: ' || claim.comment ||
-                ', STATUS: ' || COALESCE(claim.status, 'N/A') || '\n';
+                'Root: ' || root_key || ', CEID: ' || claim_rec.ceid ||
+                ', CLIENT_ID: ' || claim_rec.client_id ||
+                ', USER_NAME: ' || claim_rec.user_name ||
+                ', COMMENT: ' || claim_rec.comment ||
+                ', STATUS: ' || COALESCE(claim_rec.status, 'N/A') || '\n';
         END FOR;
-    END FOR;
+    END LOOP;
 
+    CLOSE c1;
     RETURN result;
 END;
 $$;
