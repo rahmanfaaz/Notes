@@ -6,39 +6,48 @@ AS
 $$
 DECLARE
     result VARCHAR DEFAULT '';
-    rs RESULTSET DEFAULT (
-        SELECT key AS root_key, value AS claims
-        FROM TABLE(FLATTEN(input => PARSE_JSON(:json_input)))
-    );
     root_key VARCHAR;
     claims VARIANT;
-    c1 CURSOR FOR rs;
+    ceid VARCHAR;
+    client_id VARCHAR;
+    user_name VARCHAR;
+    comment VARCHAR;
+    status VARCHAR;
+
+    CURSOR c1 FOR
+        SELECT key AS root_key, value AS claims
+        FROM TABLE(FLATTEN(input => PARSE_JSON(:json_input)));
+
+    claim_cursor CURSOR FOR
+        SELECT 
+            value:CEID::VARCHAR AS ceid,
+            value:CLIENT_ID::VARCHAR AS client_id,
+            value:USER_NAME::VARCHAR AS user_name,
+            value:COMMENT::VARCHAR AS comment,
+            value:STATUS::VARCHAR AS status
+        FROM TABLE(FLATTEN(input => claims));
 BEGIN
     OPEN c1;
     LOOP
         FETCH c1 INTO root_key, claims;
         EXIT WHEN c1%NOTFOUND;
 
-        FOR claim_rec IN (
-            SELECT 
-                value:CEID::VARCHAR AS ceid,
-                value:CLIENT_ID::VARCHAR AS client_id,
-                value:USER_NAME::VARCHAR AS user_name,
-                value:COMMENT::VARCHAR AS comment,
-                value:STATUS::VARCHAR AS status
-            FROM TABLE(FLATTEN(input => claims))
-        )
-        DO
-            result := result || 
-                'Root: ' || root_key || ', CEID: ' || claim_rec.ceid ||
-                ', CLIENT_ID: ' || claim_rec.client_id ||
-                ', USER_NAME: ' || claim_rec.user_name ||
-                ', COMMENT: ' || claim_rec.comment ||
-                ', STATUS: ' || COALESCE(claim_rec.status, 'N/A') || '\n';
-        END FOR;
-    END LOOP;
+        OPEN claim_cursor;
+        LOOP
+            FETCH claim_cursor INTO ceid, client_id, user_name, comment, status;
+            EXIT WHEN claim_cursor%NOTFOUND;
 
+            result := result || 
+                'Root: ' || root_key || ', CEID: ' || ceid ||
+                ', CLIENT_ID: ' || client_id ||
+                ', USER_NAME: ' || user_name ||
+                ', COMMENT: ' || comment ||
+                ', STATUS: ' || COALESCE(status, 'N/A') || '\n';
+        END LOOP;
+        CLOSE claim_cursor;
+    END LOOP;
     CLOSE c1;
+
     RETURN result;
 END;
 $$;
