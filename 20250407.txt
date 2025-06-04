@@ -1,2 +1,36 @@
-  RETURN 'CEID: ' || ceid || ', CLIENT_ID: ' || client_id || ', USER_NAME: ' || user_name 
-           || ', COMMENT: ' || comment || ', STATUS: ' || status;
+CREATE OR REPLACE PROCEDURE print_all_claims(json_input VARCHAR)
+RETURNS VARCHAR
+LANGUAGE SQL
+EXECUTE AS CALLER
+AS
+$$
+DECLARE
+    result VARCHAR DEFAULT '';
+BEGIN
+    FOR record IN (
+        SELECT key AS root_key, value AS claims
+        FROM TABLE(FLATTEN(input => PARSE_JSON(:json_input)))
+    )
+    DO
+        FOR claim IN (
+            SELECT 
+                value:CEID::VARCHAR AS ceid,
+                value:CLIENT_ID::VARCHAR AS client_id,
+                value:USER_NAME::VARCHAR AS user_name,
+                value:COMMENT::VARCHAR AS comment,
+                value:STATUS::VARCHAR AS status
+            FROM TABLE(FLATTEN(input => record.claims))
+        )
+        DO
+            result := result || 
+                'Root: ' || record.root_key || ', CEID: ' || claim.ceid ||
+                ', CLIENT_ID: ' || claim.client_id ||
+                ', USER_NAME: ' || claim.user_name ||
+                ', COMMENT: ' || claim.comment ||
+                ', STATUS: ' || COALESCE(claim.status, 'N/A') || '\n';
+        END FOR;
+    END FOR;
+
+    RETURN result;
+END;
+$$;
