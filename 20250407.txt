@@ -6,12 +6,15 @@ AS
 $$
 DECLARE
     result VARCHAR DEFAULT '';
-    c1 CURSOR FOR
-        SELECT key AS root_key, value AS claims
-        FROM TABLE(FLATTEN(input => PARSE_JSON(:json_input)));
+    rs RESULTSET;
     root_key VARCHAR;
     claims VARIANT;
 BEGIN
+    rs := (SELECT key AS root_key, value AS claims
+           FROM TABLE(FLATTEN(input => PARSE_JSON(:json_input))));
+
+    LET c1 CURSOR FOR rs;
+
     OPEN c1;
     LOOP
         FETCH c1 INTO root_key, claims;
