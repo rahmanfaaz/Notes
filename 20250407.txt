@@ -1,105 +1,28 @@
-import React from "react";
-import {
-  Box,
-  Tabs,
-  Tab,
-  Typography,
-  Drawer,
-  IconButton,
-  Stack,
-  Button,
-  Fab
-} from "@mui/material";
-import CropSquareIcon from '@mui/icons-material/CropSquare';
-import CheckBoxOutlineBlankIcon from '@mui/icons-material/CheckBoxOutlineBlank';
-import RemoveIcon from '@mui/icons-material/Remove';
-import VisibilityIcon from '@mui/icons-material/Visibility';
+CREATE OR REPLACE PROCEDURE Accept_claims(json_input STRING)
+RETURNS VARCHAR
+LANGUAGE SQL
+AS
+$$
+DECLARE
+  ceid VARCHAR;
+  client_id VARCHAR;
+  user_name VARCHAR;
+  comment VARCHAR;
+BEGIN
+  -- Process Root1
+  SELECT 
+    f.value:CEID::VARCHAR,
+    f.value:CLIENT_ID::VARCHAR,
+    f.value:USER_NAME::VARCHAR,
+    f.value:COMMENT::VARCHAR
+  INTO :ceid, :client_id, :user_name, :comment
+  FROM TABLE(FLATTEN(input => PARSE_JSON(json_input):Root1)) f;
 
-export default function ClaimsInspectorMockup() {
-  const [tabIndex, setTabIndex] = React.useState(0);
-  const [anchor, setAnchor] = React.useState('bottom'); // bottom, right, left
-  const [open, setOpen] = React.useState(true);
+  -- Example of further processing or inserting into a table
+  INSERT INTO claims_table (ceid, client_id, user_name, comment)
+  VALUES (:ceid, :client_id, :user_name, :comment);
 
-  const handleTabChange = (event, newValue) => {
-    setTabIndex(newValue);
-  };
-
-  const handlePositionChange = (position) => {
-    setAnchor(position);
-    setOpen(true);
-  };
-
-  const handleMinimize = () => {
-    setOpen(false);
-  };
-
-  const handleRestore = () => {
-    setOpen(true);
-    setAnchor('bottom');
-  };
-
-  return (
-    <>
-      {!open && (
-        <Fab
-          color="primary"
-          aria-label="restore"
-          onClick={handleRestore}
-          sx={{ position: 'fixed', bottom: 16, right: 16 }}
-        >
-          <VisibilityIcon />
-        </Fab>
-      )}
-
-      <Drawer
-        variant="persistent"
-        anchor={anchor}
-        open={open}
-        sx={{
-          width: anchor === 'left' || anchor === 'right' ? 400 : '100%',
-          height: anchor === 'bottom' ? 300 : '100%'
-        }}
-      >
-        <Box sx={{ width: "100%", p: 2 }}>
-          <Stack direction="row" justifyContent="flex-end" spacing={1}>
-            <IconButton onClick={() => handlePositionChange('bottom')}><CheckBoxOutlineBlankIcon /></IconButton>
-            <IconButton onClick={() => handlePositionChange('right')}><CropSquareIcon /></IconButton>
-            <IconButton onClick={handleMinimize}><RemoveIcon /></IconButton>
-          </Stack>
-
-          <Typography variant="h6" sx={{ mb: 2 }}>
-            Data Sources Inspector
-          </Typography>
-
-          <Tabs
-            value={tabIndex}
-            onChange={handleTabChange}
-            aria-label="data sources tabs"
-            centered
-          >
-            <Tab label="TLP Balance" />
-            <Tab label="TLP Transactions" />
-            <Tab label="IBIS Interest Statement" />
-            <Tab label="GTM Trade Commentary" />
-          </Tabs>
-
-          <Box hidden={tabIndex !== 0} sx={{ p: 2 }}>
-            <Typography variant="body1">Displaying TLP Balance data...</Typography>
-          </Box>
-
-          <Box hidden={tabIndex !== 1} sx={{ p: 2 }}>
-            <Typography variant="body1">Displaying TLP Transactions data...</Typography>
-          </Box>
-
-          <Box hidden={tabIndex !== 2} sx={{ p: 2 }}>
-            <Typography variant="body1">Displaying IBIS Interest Statement data...</Typography>
-          </Box>
-
-          <Box hidden={tabIndex !== 3} sx={{ p: 2 }}>
-            <Typography variant="body1">Displaying GTM Trade Commentary data...</Typography>
-          </Box>
-        </Box>
-      </Drawer>
-    </>
-  );
-}
+  -- Repeat for Root2 and Root3 or handle dynamically as required
+  RETURN 'Claims processed successfully';
+END;
+$$;
