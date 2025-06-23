@@ -1,34 +1,89 @@
-CREATE OR REPLACE PROCEDURE print_all_claims(json_input VARCHAR)
-RETURNS VARCHAR
-LANGUAGE SQL
-EXECUTE AS CALLER
-AS
-$$
-DECLARE
-    result VARCHAR DEFAULT '';
-    ceid VARCHAR;
-    client_id VARCHAR;
-    user_name VARCHAR;
-    comment VARCHAR;
+import React, { useState, useEffect } from 'react';
 
-    CURSOR c1 FOR
-        SELECT 
-            f.value:CEID::VARCHAR AS ceid,
-            f.value:CLIENT_ID::VARCHAR AS client_id,
-            f.value:USER_NAME::VARCHAR AS user_name,
-            f.value:COMMENT::VARCHAR AS comment
-        FROM TABLE(FLATTEN(input => PARSE_JSON(:json_input):Root1)) f;
-BEGIN
-    OPEN c1;
-    LOOP
-        FETCH c1 INTO ceid, client_id, user_name, comment;
-        EXIT WHEN c1%NOTFOUND;
+export default function GenericTable({ data }) {
+  const [tableData, setTableData] = useState([]);
+  const [columns, setColumns] = useState([]);
+  const [sortKey, setSortKey] = useState(null);
+  const [sortAsc, setSortAsc] = useState(true);
 
-        result := result || 'CEID: ' || ceid || ', CLIENT_ID: ' || client_id ||
-                  ', USER_NAME: ' || user_name || ', COMMENT: ' || comment || '\n';
-    END LOOP;
-    CLOSE c1;
+  useEffect(() => {
+    if (Array.isArray(data) && data.length > 0) {
+      setTableData(data);
+      setColumns(Object.keys(data[0]));
+    }
+  }, [data]);
 
-    RETURN result;
-END;
-$$;
+  const handleSort = (key) => {
+    const asc = key === sortKey ? !sortAsc : true;
+    const sorted = [...tableData].sort((a, b) => {
+      const valA = a[key] ?? '';
+      const valB = b[key] ?? '';
+      return asc ? valA.toString().localeCompare(valB.toString()) : valB.toString().localeCompare(valA.toString());
+    });
+    setSortKey(key);
+    setSortAsc(asc);
+    setTableData(sorted);
+  };
+
+  return (
+    <div className="p-4 bg-gray-900 text-white rounded-xl shadow-xl overflow-auto">
+      <table className="min-w-[1000px] w-full table-auto">
+        <thead className="bg-gray-800 text-sm uppercase">
+          <tr>
+            {columns.map((col) => (
+              <th
+                key={col}
+                onClick={() => handleSort(col)}
+                className="px-4 py-2 text-left cursor-pointer hover:text-blue-400 whitespace-nowrap"
+              >
+                {col.replace(/_/g, ' ')} {sortKey === col && (sortAsc ? '▲' : '▼')}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {tableData.map((row, idx) => (
+            <tr key={idx} className="border-t border-gray-700 hover:bg-gray-800">
+              {columns.map((col) => (
+                <td key={col} className="px-4 py-2 text-sm whitespace-nowrap">
+                  {row[col] !== null ? row[col].toString() : 'null'}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+
+
+import React from 'react';
+import GenericTable from './GenericTable';
+
+const sampleData = [
+  {
+    id: 1,
+    name: "John Doe",
+    status: "Active",
+    updated_at: "2025-06-20T14:00:00Z"
+  },
+  {
+    id: 2,
+    name: "Jane Smith",
+    status: "Inactive",
+    updated_at: "2025-06-18T10:00:00Z"
+  }
+];
+
+function App() {
+  return (
+    <div className="bg-black min-h-screen p-8">
+      <h1 className="text-white text-2xl mb-4">Dynamic Audit Table</h1>
+      <GenericTable data={sampleData} />
+    </div>
+  );
+}
+
+export default App;
