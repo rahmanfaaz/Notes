@@ -1,89 +1,36 @@
-import React, { useState, useEffect } from 'react';
+Here’s a well-structured **JIRA Story** formatted in a clear and professional tone:
 
-export default function GenericTable({ data }) {
-  const [tableData, setTableData] = useState([]);
-  const [columns, setColumns] = useState([]);
-  const [sortKey, setSortKey] = useState(null);
-  const [sortAsc, setSortAsc] = useState(true);
+---
 
-  useEffect(() => {
-    if (Array.isArray(data) && data.length > 0) {
-      setTableData(data);
-      setColumns(Object.keys(data[0]));
-    }
-  }, [data]);
+**Title:**
+Update Metadata Variables and Helm Chart for EMEA Depositary Extracts – Auth Failure Fix
 
-  const handleSort = (key) => {
-    const asc = key === sortKey ? !sortAsc : true;
-    const sorted = [...tableData].sort((a, b) => {
-      const valA = a[key] ?? '';
-      const valB = b[key] ?? '';
-      return asc ? valA.toString().localeCompare(valB.toString()) : valB.toString().localeCompare(valA.toString());
-    });
-    setSortKey(key);
-    setSortAsc(asc);
-    setTableData(sorted);
-  };
+---
 
-  return (
-    <div className="p-4 bg-gray-900 text-white rounded-xl shadow-xl overflow-auto">
-      <table className="min-w-[1000px] w-full table-auto">
-        <thead className="bg-gray-800 text-sm uppercase">
-          <tr>
-            {columns.map((col) => (
-              <th
-                key={col}
-                onClick={() => handleSort(col)}
-                className="px-4 py-2 text-left cursor-pointer hover:text-blue-400 whitespace-nowrap"
-              >
-                {col.replace(/_/g, ' ')} {sortKey === col && (sortAsc ? '▲' : '▼')}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {tableData.map((row, idx) => (
-            <tr key={idx} className="border-t border-gray-700 hover:bg-gray-800">
-              {columns.map((col) => (
-                <td key={col} className="px-4 py-2 text-sm whitespace-nowrap">
-                  {row[col] !== null ? row[col].toString() : 'null'}
-                </td>
-              ))}
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-}
+**Description:**
+The initial run of extracts for the **EMEA Depositary Business** is consistently failing due to **authentication errors**. Although retransmission succeeds, the core issue in the initial run needs to be resolved.
 
+The **Core Team** has identified the root cause and provided a **fix involving updates to certain variables** in the extract metadata and Helm chart configuration. These changes need to be applied to the relevant extract definitions to ensure successful initial transmissions.
 
+---
 
-import React from 'react';
-import GenericTable from './GenericTable';
+**Acceptance Criteria:**
 
-const sampleData = [
-  {
-    id: 1,
-    name: "John Doe",
-    status: "Active",
-    updated_at: "2025-06-20T14:00:00Z"
-  },
-  {
-    id: 2,
-    name: "Jane Smith",
-    status: "Inactive",
-    updated_at: "2025-06-18T10:00:00Z"
-  }
-];
+* [ ] Update the relevant **metadata variables** as per the fix provided by the Core Team.
+* [ ] Apply the necessary changes to the **Helm chart values/configuration**.
+* [ ] Deploy the updated Helm chart to the appropriate environment(s).
+* [ ] Validate that the **initial run of EMEA Depositary extracts completes successfully** without authentication failure.
+* [ ] Ensure retransmission process remains unaffected.
+* [ ] Update documentation or configuration repositories as needed.
 
-function App() {
-  return (
-    <div className="bg-black min-h-screen p-8">
-      <h1 className="text-white text-2xl mb-4">Dynamic Audit Table</h1>
-      <GenericTable data={sampleData} />
-    </div>
-  );
-}
+---
 
-export default App;
+**Notes:**
+
+* Fix details and values to be updated are available in the shared documentation or JIRA linked by the Core Team.
+* Coordination with the DevOps team may be required for Helm deployment.
+* Extracts affected: \[List the exact extract names if available]
+
+---
+
+Let me know if you'd like this adapted for a Bug ticket instead, or need a subtasks breakdown.
