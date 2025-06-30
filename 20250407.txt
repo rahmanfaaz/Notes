@@ -1,25 +1,19 @@
-Create CLAIMS_SUPPLEMENTAL_PROPERTIES Table for UI and Backend Static Data
+### **Title:**
 
-As a developer,
-I want to create a centralized Snowflake table named CLAIMS_SUPPLEMENTAL_PROPERTIES,
-So that all static configuration and reference data (such as dropdowns, brokers, status lists) used by the UI and backend are stored and maintained consistently.
+Promote Database Development Objects to QA Environment
 
-Snowflake table CLAIMS_SUPPLEMENTAL_PROPERTIES is created in the appropriate schema.
+---
 
-Table includes fields for logical grouping, static value storage, optional display/description, and metadata for tracking.
+### **Description:**
 
-Initial reference data is inserted as per UI/backend needs.
+Promote all finalized database development objects related to the Claims Engine project from the Development environment to the QA environment. This includes tables, views, procedures, streams, tasks, and supporting configuration tables such as `CLAIMS_SUPPLEMENTAL_PROPERTIES`.
 
-Table access is verified and test queries are validated for UI/backend components.
+---
 
-Data model is reviewed and approved by technical leads.
+### **Acceptance Criteria:**
 
-Table structure includes fields for type, name, value, description, and tracking metadata.
-
-Supports UI and backend lookup needs through a flexible schema.
-
-Initial sample records are inserted (e.g., claim statuses, broker list).
-
-Structure reviewed and approved by data engineering lead.
-
-Data access tested by both frontend and backend applications.
+* All database objects are reviewed and approved for promotion.
+* Verified DDL and DML scripts are executed in QA successfully.
+* QA instance reflects the latest schema structure and reference data.
+* Functional dependencies (e.g., procedures, streams, tasks) are validated post-deployment.
+* Confirmation from QA team that the environment is ready for integration testing.
