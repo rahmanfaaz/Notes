@@ -1,19 +1,101 @@
-### **Title:**
+// React + FastAPI DDL Converter App
 
-Promote Database Development Objects to QA Environment
+// ===================== FRONTEND ===================== //
+// Create a React app using create-react-app or Vite
+// This is the main component for DDL conversion UI
 
----
+import React, { useState } from 'react';
 
-### **Description:**
+export default function App() {
+  const [oracleDDL, setOracleDDL] = useState('');
+  const [snowflakeDDL, setSnowflakeDDL] = useState('');
 
-Promote all finalized database development objects related to the Claims Engine project from the Development environment to the QA environment. This includes tables, views, procedures, streams, tasks, and supporting configuration tables such as `CLAIMS_SUPPLEMENTAL_PROPERTIES`.
+  const convertDDL = async () => {
+    const response = await fetch('http://localhost:8000/convert', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ oracle_ddl: oracleDDL }),
+    });
+    const data = await response.json();
+    setSnowflakeDDL(data.snowflake_ddl);
+  };
 
----
+  return (
+    <div className="grid grid-cols-2 gap-4 p-6 h-screen bg-gray-100">
+      <div>
+        <h2 className="text-xl font-bold mb-2">Oracle DDL</h2>
+        <textarea
+          className="w-full h-[90%] p-4 border rounded shadow bg-white"
+          value={oracleDDL}
+          onChange={(e) => setOracleDDL(e.target.value)}
+        />
+        <button onClick={convertDDL} className="mt-4 px-4 py-2 bg-blue-600 text-white rounded shadow">Convert</button>
+      </div>
+      <div>
+        <h2 className="text-xl font-bold mb-2">Snowflake DDL</h2>
+        <textarea
+          className="w-full h-[90%] p-4 border rounded shadow bg-white"
+          value={snowflakeDDL}
+          readOnly
+        />
+      </div>
+    </div>
+  );
+}
 
-### **Acceptance Criteria:**
+// ===================== BACKEND ===================== //
+// Create a FastAPI app in a separate Python file
+// Save as backend/main.py
 
-* All database objects are reviewed and approved for promotion.
-* Verified DDL and DML scripts are executed in QA successfully.
-* QA instance reflects the latest schema structure and reference data.
-* Functional dependencies (e.g., procedures, streams, tasks) are validated post-deployment.
-* Confirmation from QA team that the environment is ready for integration testing.
+from fastapi import FastAPI
+from pydantic import BaseModel
+import re
+from fastapi.middleware.cors import CORSMiddleware
+
+app = FastAPI()
+
+# Allow CORS for local frontend
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+class DDLRequest(BaseModel):
+    oracle_ddl: str
+
+@app.post("/convert")
+def convert_ddl(request: DDLRequest):
+    ddl = request.oracle_ddl
+
+    ddl = re.sub(r'VARCHAR2', 'VARCHAR', ddl, flags=re.IGNORECASE)
+    ddl = re.sub(r'NVARCHAR2', 'VARCHAR', ddl, flags=re.IGNORECASE)
+    ddl = re.sub(r'NUMBER\((\d+),(\d+)\)', r'NUMBER(\1,\2)', ddl)
+    ddl = re.sub(r'NUMBER\((\d+)\)', r'NUMBER(\1)', ddl)
+    ddl = re.sub(r'NUMBER', 'NUMBER', ddl)
+    ddl = re.sub(r'DATE', 'TIMESTAMP_NTZ', ddl, flags=re.IGNORECASE)
+    ddl = re.sub(r'CLOB', 'TEXT', ddl, flags=re.IGNORECASE)
+    ddl = re.sub(r'BLOB', 'BINARY', ddl, flags=re.IGNORECASE)
+    ddl = re.sub(r'TABLESPACE\s+\w+', '', ddl, flags=re.IGNORECASE)
+    ddl = re.sub(r'STORAGE\s*\(.*?\)', '', ddl, flags=re.DOTALL | re.IGNORECASE)
+    ddl = re.sub(r'ENABLE|DISABLE', '', ddl, flags=re.IGNORECASE)
+
+    return {"snowflake_ddl": ddl.strip()}
+
+// ===================== HOW TO RUN ===================== //
+// 1. Backend:
+//    - cd backend
+//    - python -m venv venv && source venv/bin/activate
+//    - pip install fastapi uvicorn
+//    - uvicorn main:app --reload
+
+// 2. Frontend:
+//    - npx create-react-app frontend && cd frontend
+//    - Replace App.js with the code above
+//    - npm install
+//    - npm start
+
+// Your app will be available at http://localhost:3000/
+// It will talk to FastAPI running at http://localhost:8000/convert
