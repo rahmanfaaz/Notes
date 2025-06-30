@@ -1,36 +1,25 @@
-Here’s a well-structured **JIRA Story** formatted in a clear and professional tone:
+Create CLAIMS_SUPPLEMENTAL_PROPERTIES Table for UI and Backend Static Data
 
----
+As a developer,
+I want to create a centralized Snowflake table named CLAIMS_SUPPLEMENTAL_PROPERTIES,
+So that all static configuration and reference data (such as dropdowns, brokers, status lists) used by the UI and backend are stored and maintained consistently.
 
-**Title:**
-Update Metadata Variables and Helm Chart for EMEA Depositary Extracts – Auth Failure Fix
+Snowflake table CLAIMS_SUPPLEMENTAL_PROPERTIES is created in the appropriate schema.
 
----
+Table includes fields for logical grouping, static value storage, optional display/description, and metadata for tracking.
 
-**Description:**
-The initial run of extracts for the **EMEA Depositary Business** is consistently failing due to **authentication errors**. Although retransmission succeeds, the core issue in the initial run needs to be resolved.
+Initial reference data is inserted as per UI/backend needs.
 
-The **Core Team** has identified the root cause and provided a **fix involving updates to certain variables** in the extract metadata and Helm chart configuration. These changes need to be applied to the relevant extract definitions to ensure successful initial transmissions.
+Table access is verified and test queries are validated for UI/backend components.
 
----
+Data model is reviewed and approved by technical leads.
 
-**Acceptance Criteria:**
+Table structure includes fields for type, name, value, description, and tracking metadata.
 
-* [ ] Update the relevant **metadata variables** as per the fix provided by the Core Team.
-* [ ] Apply the necessary changes to the **Helm chart values/configuration**.
-* [ ] Deploy the updated Helm chart to the appropriate environment(s).
-* [ ] Validate that the **initial run of EMEA Depositary extracts completes successfully** without authentication failure.
-* [ ] Ensure retransmission process remains unaffected.
-* [ ] Update documentation or configuration repositories as needed.
+Supports UI and backend lookup needs through a flexible schema.
 
----
+Initial sample records are inserted (e.g., claim statuses, broker list).
 
-**Notes:**
+Structure reviewed and approved by data engineering lead.
 
-* Fix details and values to be updated are available in the shared documentation or JIRA linked by the Core Team.
-* Coordination with the DevOps team may be required for Helm deployment.
-* Extracts affected: \[List the exact extract names if available]
-
----
-
-Let me know if you'd like this adapted for a Bug ticket instead, or need a subtasks breakdown.
+Data access tested by both frontend and backend applications.
