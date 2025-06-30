@@ -1,101 +1,57 @@
-// React + FastAPI DDL Converter App
+# ddl_converter_app.py - Streamlit Smart Oracle to Snowflake Code Converter
 
-// ===================== FRONTEND ===================== //
-// Create a React app using create-react-app or Vite
-// This is the main component for DDL conversion UI
-
-import React, { useState } from 'react';
-
-export default function App() {
-  const [oracleDDL, setOracleDDL] = useState('');
-  const [snowflakeDDL, setSnowflakeDDL] = useState('');
-
-  const convertDDL = async () => {
-    const response = await fetch('http://localhost:8000/convert', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ oracle_ddl: oracleDDL }),
-    });
-    const data = await response.json();
-    setSnowflakeDDL(data.snowflake_ddl);
-  };
-
-  return (
-    <div className="grid grid-cols-2 gap-4 p-6 h-screen bg-gray-100">
-      <div>
-        <h2 className="text-xl font-bold mb-2">Oracle DDL</h2>
-        <textarea
-          className="w-full h-[90%] p-4 border rounded shadow bg-white"
-          value={oracleDDL}
-          onChange={(e) => setOracleDDL(e.target.value)}
-        />
-        <button onClick={convertDDL} className="mt-4 px-4 py-2 bg-blue-600 text-white rounded shadow">Convert</button>
-      </div>
-      <div>
-        <h2 className="text-xl font-bold mb-2">Snowflake DDL</h2>
-        <textarea
-          className="w-full h-[90%] p-4 border rounded shadow bg-white"
-          value={snowflakeDDL}
-          readOnly
-        />
-      </div>
-    </div>
-  );
-}
-
-// ===================== BACKEND ===================== //
-// Create a FastAPI app in a separate Python file
-// Save as backend/main.py
-
-from fastapi import FastAPI
-from pydantic import BaseModel
+import streamlit as st
 import re
-from fastapi.middleware.cors import CORSMiddleware
+import sqlglot
+from sqlglot import parse_one, transpile, exp
 
-app = FastAPI()
+def intelligent_convert_oracle_to_snowflake(sql_code: str) -> str:
+    try:
+        # Attempt to parse Oracle SQL
+        transpiled = transpile(sql_code, read='oracle', write='snowflake')
+        return "\n".join(transpiled)
+    except Exception as e:
+        return f"-- Error during intelligent conversion: {str(e)}"
 
-# Allow CORS for local frontend
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+def fallback_regex_conversion(ddl: str) -> str:
+    try:
+        ddl = re.sub(r"VARCHAR2", "VARCHAR", ddl, flags=re.IGNORECASE)
+        ddl = re.sub(r"NVARCHAR2", "VARCHAR", ddl, flags=re.IGNORECASE)
+        ddl = re.sub(r"NUMBER\((\d+),(\d+)\)", r"NUMBER(\1,\2)", ddl)
+        ddl = re.sub(r"NUMBER\((\d+)\)", r"NUMBER(\1)", ddl)
+        ddl = re.sub(r"\bNUMBER\b", "NUMBER", ddl)
+        ddl = re.sub(r"\bDATE\b", "TIMESTAMP_NTZ", ddl, flags=re.IGNORECASE)
+        ddl = re.sub(r"CLOB", "TEXT", ddl, flags=re.IGNORECASE)
+        ddl = re.sub(r"BLOB", "BINARY", ddl, flags=re.IGNORECASE)
+        ddl = re.sub(r"TABLESPACE\s+\w+", "", ddl, flags=re.IGNORECASE)
+        ddl = re.sub(r"STORAGE\s*\(.*?\)", "", ddl, flags=re.DOTALL | re.IGNORECASE)
+        ddl = re.sub(r"ENABLE", "", ddl, flags=re.IGNORECASE)
+        ddl = re.sub(r"DISABLE", "", ddl, flags=re.IGNORECASE)
+    except Exception as e:
+        return f"-- Error in fallback conversion: {str(e)}"
+    return ddl.strip()
 
-class DDLRequest(BaseModel):
-    oracle_ddl: str
+# ==== UI ====
+def main():
+    st.set_page_config(page_title="Oracle to Snowflake Code Converter", layout="wide")
+    st.title("🧠 Oracle to Snowflake Intelligent Converter")
+    st.markdown("Paste any Oracle SQL code — tables, procedures, functions — and get Snowflake-compatible SQL.")
 
-@app.post("/convert")
-def convert_ddl(request: DDLRequest):
-    ddl = request.oracle_ddl
+    col1, col2 = st.columns(2)
 
-    ddl = re.sub(r'VARCHAR2', 'VARCHAR', ddl, flags=re.IGNORECASE)
-    ddl = re.sub(r'NVARCHAR2', 'VARCHAR', ddl, flags=re.IGNORECASE)
-    ddl = re.sub(r'NUMBER\((\d+),(\d+)\)', r'NUMBER(\1,\2)', ddl)
-    ddl = re.sub(r'NUMBER\((\d+)\)', r'NUMBER(\1)', ddl)
-    ddl = re.sub(r'NUMBER', 'NUMBER', ddl)
-    ddl = re.sub(r'DATE', 'TIMESTAMP_NTZ', ddl, flags=re.IGNORECASE)
-    ddl = re.sub(r'CLOB', 'TEXT', ddl, flags=re.IGNORECASE)
-    ddl = re.sub(r'BLOB', 'BINARY', ddl, flags=re.IGNORECASE)
-    ddl = re.sub(r'TABLESPACE\s+\w+', '', ddl, flags=re.IGNORECASE)
-    ddl = re.sub(r'STORAGE\s*\(.*?\)', '', ddl, flags=re.DOTALL | re.IGNORECASE)
-    ddl = re.sub(r'ENABLE|DISABLE', '', ddl, flags=re.IGNORECASE)
+    with col1:
+        st.subheader("Oracle SQL Code")
+        oracle_code = st.text_area("Paste Oracle SQL", value="", height=400)
 
-    return {"snowflake_ddl": ddl.strip()}
+    with col2:
+        st.subheader("Snowflake-Compatible Output")
+        if oracle_code:
+            converted = intelligent_convert_oracle_to_snowflake(oracle_code)
+            if converted.startswith("-- Error"):
+                st.warning("Parser failed — falling back to regex-based conversion.")
+                converted = fallback_regex_conversion(oracle_code)
+            st.text_area("Snowflake SQL", value=converted, height=400)
+            st.download_button("Download Converted SQL", converted, file_name="converted_snowflake.sql")
 
-// ===================== HOW TO RUN ===================== //
-// 1. Backend:
-//    - cd backend
-//    - python -m venv venv && source venv/bin/activate
-//    - pip install fastapi uvicorn
-//    - uvicorn main:app --reload
-
-// 2. Frontend:
-//    - npx create-react-app frontend && cd frontend
-//    - Replace App.js with the code above
-//    - npm install
-//    - npm start
-
-// Your app will be available at http://localhost:3000/
-// It will talk to FastAPI running at http://localhost:8000/convert
+if __name__ == "__main__":
+    main()
