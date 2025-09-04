@@ -1,57 +1,209 @@
-# ddl_converter_app.py - Streamlit Smart Oracle to Snowflake Code Converter
+-- ==========================================================
+-- Context
+-- ==========================================================
+USE ROLE SFRL_D_ICR_DEP_DW_ALL_OBJECTS_A;
+USE DATABASE SFDB_D_ICR_DEP_DW;
+USE SCHEMA DW_CLM;
 
-import streamlit as st
-import re
-import sqlglot
-from sqlglot import parse_one, transpile, exp
+-- ==========================================================
+-- 1. FTST Parameter Control Table
+-- ==========================================================
+CREATE OR REPLACE TABLE CLAIMS_PARAMETER_CONTROL_FTST (
+  CLAIM_IDS STRING,
+  LATEST_COMMENTS STRING,
+  CHANGED_BY STRING,
+  UPDATED_TIME TIMESTAMP,
+  NEW_STATUS STRING,
+  SESSION_ID STRING,
+  PROCESS_NAME STRING
+);
 
-def intelligent_convert_oracle_to_snowflake(sql_code: str) -> str:
-    try:
-        # Attempt to parse Oracle SQL
-        transpiled = transpile(sql_code, read='oracle', write='snowflake')
-        return "\n".join(transpiled)
-    except Exception as e:
-        return f"-- Error during intelligent conversion: {str(e)}"
+-- ==========================================================
+-- 2. FTST Run Control Table
+-- ==========================================================
+CREATE OR REPLACE TABLE CLAIMS_RUN_CONTROL_FTST (
+  SESSION_ID STRING,
+  PROCESS_NAME STRING,
+  TASK_NAME STRING,
+  STATUS STRING,
+  START_TIME TIMESTAMP,
+  END_TIME TIMESTAMP,
+  ERROR_MSG STRING
+);
 
-def fallback_regex_conversion(ddl: str) -> str:
-    try:
-        ddl = re.sub(r"VARCHAR2", "VARCHAR", ddl, flags=re.IGNORECASE)
-        ddl = re.sub(r"NVARCHAR2", "VARCHAR", ddl, flags=re.IGNORECASE)
-        ddl = re.sub(r"NUMBER\((\d+),(\d+)\)", r"NUMBER(\1,\2)", ddl)
-        ddl = re.sub(r"NUMBER\((\d+)\)", r"NUMBER(\1)", ddl)
-        ddl = re.sub(r"\bNUMBER\b", "NUMBER", ddl)
-        ddl = re.sub(r"\bDATE\b", "TIMESTAMP_NTZ", ddl, flags=re.IGNORECASE)
-        ddl = re.sub(r"CLOB", "TEXT", ddl, flags=re.IGNORECASE)
-        ddl = re.sub(r"BLOB", "BINARY", ddl, flags=re.IGNORECASE)
-        ddl = re.sub(r"TABLESPACE\s+\w+", "", ddl, flags=re.IGNORECASE)
-        ddl = re.sub(r"STORAGE\s*\(.*?\)", "", ddl, flags=re.DOTALL | re.IGNORECASE)
-        ddl = re.sub(r"ENABLE", "", ddl, flags=re.IGNORECASE)
-        ddl = re.sub(r"DISABLE", "", ddl, flags=re.IGNORECASE)
-    except Exception as e:
-        return f"-- Error in fallback conversion: {str(e)}"
-    return ddl.strip()
+-- ==========================================================
+-- 3. FTST Stored Procedure (API entry point)
+-- ==========================================================
+CREATE OR REPLACE PROCEDURE SP_START_CLAIMS_UNDER_REVIEW_FTST(
+    CLAIM_IDS ARRAY,
+    CHANGED_BY STRING,
+    LATEST_COMMENTS ARRAY,
+    USER_DATE TIMESTAMP
+)
+RETURNS STRING
+LANGUAGE SQL
+AS
+$$
+DECLARE
+  v_session_id STRING;
+  v_process_name STRING;
+BEGIN
+  LET v_session_id  = UUID_STRING();
+  LET v_process_name = 'UNDER_REVIEW_FTST';
 
-# ==== UI ====
-def main():
-    st.set_page_config(page_title="Oracle to Snowflake Code Converter", layout="wide")
-    st.title("🧠 Oracle to Snowflake Intelligent Converter")
-    st.markdown("Paste any Oracle SQL code — tables, procedures, functions — and get Snowflake-compatible SQL.")
+  -- Insert CEIDs into FTST parameter table
+  INSERT INTO CLAIMS_PARAMETER_CONTROL_FTST (claim_ids, latest_comments, changed_by, updated_time, new_status, session_id, process_name)
+  SELECT VALUE::STRING,
+         :LATEST_COMMENTS[INDEX]::STRING,
+         :CHANGED_BY,
+         :USER_DATE,
+         'UNDER_REVIEW',
+         v_session_id,
+         v_process_name
+  FROM TABLE(FLATTEN(INPUT => :CLAIM_IDS)) WITH ORDINALITY AS f;
 
-    col1, col2 = st.columns(2)
+  -- Seed FTST run-control
+  INSERT INTO CLAIMS_RUN_CONTROL_FTST
+  SELECT v_session_id, v_process_name, 'UPD_MASTER_TASK_FTST', 'PENDING', CURRENT_TIMESTAMP, NULL, NULL
+  UNION ALL
+  SELECT v_session_id, v_process_name, 'UPD_QUE_REQ_TASK_FTST', 'PENDING', CURRENT_TIMESTAMP, NULL, NULL
+  UNION ALL
+  SELECT v_session_id, v_process_name, 'INS_QUE_AUD_TASK_FTST', 'PENDING', CURRENT_TIMESTAMP, NULL, NULL;
 
-    with col1:
-        st.subheader("Oracle SQL Code")
-        oracle_code = st.text_area("Paste Oracle SQL", value="", height=400)
+  -- Trigger parent task
+  EXECUTE TASK CQ_UR_DML_PARENT_TASK_FTST;
 
-    with col2:
-        st.subheader("Snowflake-Compatible Output")
-        if oracle_code:
-            converted = intelligent_convert_oracle_to_snowflake(oracle_code)
-            if converted.startswith("-- Error"):
-                st.warning("Parser failed — falling back to regex-based conversion.")
-                converted = fallback_regex_conversion(oracle_code)
-            st.text_area("Snowflake SQL", value=converted, height=400)
-            st.download_button("Download Converted SQL", converted, file_name="converted_snowflake.sql")
+  RETURN v_session_id;
+END;
+$$;
 
-if __name__ == "__main__":
-    main()
+-- ==========================================================
+-- 4. FTST Parent Task
+-- ==========================================================
+CREATE OR REPLACE TASK CQ_UR_DML_PARENT_TASK_FTST
+  WAREHOUSE = SFVW_D_DEV_APP_CONSOLIDATED_DATA_LOADS
+AS
+  -- Dummy dispatcher
+  SELECT CURRENT_TIMESTAMP;
+
+-- ==========================================================
+-- 5. FTST Child Task - Update Master
+-- ==========================================================
+CREATE OR REPLACE TASK CQ_UR_UPD_MASTER_TASK_FTST
+  WAREHOUSE = SFVW_D_DEV_APP_CONSOLIDATED_DATA_LOADS
+  AFTER CQ_UR_DML_PARENT_TASK_FTST
+AS
+EXECUTE IMMEDIATE $$
+DECLARE v_session_id STRING;
+DECLARE v_process_name STRING;
+BEGIN
+  FOR rec IN (
+    SELECT DISTINCT session_id, process_name
+    FROM CLAIMS_RUN_CONTROL_FTST
+    WHERE task_name = 'UPD_MASTER_TASK_FTST' AND status = 'PENDING'
+  )
+  DO
+    LET v_session_id = rec.session_id;
+    LET v_process_name = rec.process_name;
+
+    UPDATE CLAIMS_RUN_CONTROL_FTST
+    SET status='RUNNING', start_time=CURRENT_TIMESTAMP
+    WHERE session_id=v_session_id AND process_name=v_process_name AND task_name='UPD_MASTER_TASK_FTST';
+
+    MERGE INTO CLAIMS_MASTER tgt
+    USING (
+      SELECT claim_ids, new_status, changed_by, updated_time, latest_comments
+      FROM CLAIMS_PARAMETER_CONTROL_FTST
+      WHERE session_id = v_session_id AND process_name = v_process_name
+    ) src
+    ON tgt.ceid = src.claim_ids
+    WHEN MATCHED THEN
+      UPDATE SET status=src.new_status, updated_user=src.changed_by, updated_time=src.updated_time,
+                 latest_comments=src.latest_comments;
+
+    UPDATE CLAIMS_RUN_CONTROL_FTST
+    SET status='SUCCESS', end_time=CURRENT_TIMESTAMP
+    WHERE session_id=v_session_id AND process_name=v_process_name AND task_name='UPD_MASTER_TASK_FTST';
+
+  END FOR;
+END;
+$$;
+
+-- ==========================================================
+-- 6. FTST Child Task - Update Queue Request
+-- ==========================================================
+CREATE OR REPLACE TASK CQ_UR_UPD_QUE_REQ_TASK_FTST
+  WAREHOUSE = SFVW_D_DEV_APP_CONSOLIDATED_DATA_LOADS
+  AFTER CQ_UR_DML_PARENT_TASK_FTST
+AS
+EXECUTE IMMEDIATE $$
+DECLARE v_session_id STRING;
+DECLARE v_process_name STRING;
+BEGIN
+  FOR rec IN (
+    SELECT DISTINCT session_id, process_name
+    FROM CLAIMS_RUN_CONTROL_FTST
+    WHERE task_name = 'UPD_QUE_REQ_TASK_FTST' AND status = 'PENDING'
+  )
+  DO
+    LET v_session_id = rec.session_id;
+    LET v_process_name = rec.process_name;
+
+    UPDATE CLAIMS_RUN_CONTROL_FTST
+    SET status='RUNNING', start_time=CURRENT_TIMESTAMP
+    WHERE session_id=v_session_id AND process_name=v_process_name AND task_name='UPD_QUE_REQ_TASK_FTST';
+
+    MERGE INTO CLAIMS_QUEUE_REQUEST tgt
+    USING (
+      SELECT claim_ids, new_status, changed_by, updated_time
+      FROM CLAIMS_PARAMETER_CONTROL_FTST
+      WHERE session_id = v_session_id AND process_name = v_process_name
+    ) src
+    ON tgt.ceid = src.claim_ids
+    WHEN MATCHED THEN
+      UPDATE SET status=src.new_status, updated_user=src.changed_by, updated_time=src.updated_time;
+
+    UPDATE CLAIMS_RUN_CONTROL_FTST
+    SET status='SUCCESS', end_time=CURRENT_TIMESTAMP
+    WHERE session_id=v_session_id AND process_name=v_process_name AND task_name='UPD_QUE_REQ_TASK_FTST';
+
+  END FOR;
+END;
+$$;
+
+-- ==========================================================
+-- 7. FTST Child Task - Insert Audit
+-- ==========================================================
+CREATE OR REPLACE TASK CQ_UR_INS_QUE_AUD_TASK_FTST
+  WAREHOUSE = SFVW_D_DEV_APP_CONSOLIDATED_DATA_LOADS
+  AFTER CQ_UR_DML_PARENT_TASK_FTST
+AS
+EXECUTE IMMEDIATE $$
+DECLARE v_session_id STRING;
+DECLARE v_process_name STRING;
+BEGIN
+  FOR rec IN (
+    SELECT DISTINCT session_id, process_name
+    FROM CLAIMS_RUN_CONTROL_FTST
+    WHERE task_name = 'INS_QUE_AUD_TASK_FTST' AND status = 'PENDING'
+  )
+  DO
+    LET v_session_id = rec.session_id;
+    LET v_process_name = rec.process_name;
+
+    UPDATE CLAIMS_RUN_CONTROL_FTST
+    SET status='RUNNING', start_time=CURRENT_TIMESTAMP
+    WHERE session_id=v_session_id AND process_name=v_process_name AND task_name='INS_QUE_AUD_TASK_FTST';
+
+    INSERT INTO CLAIMS_QUEUE_AUDIT (ceid, comments, updated_user, updated_time)
+    SELECT claim_ids, latest_comments, changed_by, updated_time
+    FROM CLAIMS_PARAMETER_CONTROL_FTST
+    WHERE session_id = v_session_id AND process_name = v_process_name;
+
+    UPDATE CLAIMS_RUN_CONTROL_FTST
+    SET status='SUCCESS', end_time=CURRENT_TIMESTAMP
+    WHERE session_id=v_session_id AND process_name=v_process_name AND task_name='INS_QUE_AUD_TASK_FTST';
+
+  END FOR;
+END;
+$$;
