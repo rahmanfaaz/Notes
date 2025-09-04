@@ -1,39 +1,3 @@
--- ==========================================================
--- Context
--- ==========================================================
-USE ROLE SFRL_D_ICR_DEP_DW_ALL_OBJECTS_A;
-USE DATABASE SFDB_D_ICR_DEP_DW;
-USE SCHEMA DW_CLM;
-
--- ==========================================================
--- 1. FTST Parameter Control Table
--- ==========================================================
-CREATE OR REPLACE TABLE CLAIMS_PARAMETER_CONTROL_FTST (
-  CLAIM_IDS STRING,
-  LATEST_COMMENTS STRING,
-  CHANGED_BY STRING,
-  UPDATED_TIME TIMESTAMP,
-  NEW_STATUS STRING,
-  SESSION_ID STRING,
-  PROCESS_NAME STRING
-);
-
--- ==========================================================
--- 2. FTST Run Control Table
--- ==========================================================
-CREATE OR REPLACE TABLE CLAIMS_RUN_CONTROL_FTST (
-  SESSION_ID STRING,
-  PROCESS_NAME STRING,
-  TASK_NAME STRING,
-  STATUS STRING,
-  START_TIME TIMESTAMP,
-  END_TIME TIMESTAMP,
-  ERROR_MSG STRING
-);
-
--- ==========================================================
--- 3. FTST Stored Procedure (API entry point)
--- ==========================================================
 CREATE OR REPLACE PROCEDURE SP_START_CLAIMS_UNDER_REVIEW_FTST(
     CLAIM_IDS ARRAY,
     CHANGED_BY STRING,
@@ -48,21 +12,26 @@ DECLARE
   v_session_id STRING;
   v_process_name STRING;
 BEGIN
-  LET v_session_id  = UUID_STRING();
-  LET v_process_name = 'UNDER_REVIEW_FTST';
+  -- Generate session id
+  v_session_id := UUID_STRING();
+  v_process_name := 'UNDER_REVIEW_FTST';
 
-  -- Insert CEIDs into FTST parameter table
-  INSERT INTO CLAIMS_PARAMETER_CONTROL_FTST (claim_ids, latest_comments, changed_by, updated_time, new_status, session_id, process_name)
-  SELECT VALUE::STRING,
-         :LATEST_COMMENTS[INDEX]::STRING,
-         :CHANGED_BY,
-         :USER_DATE,
+  -- Insert CEIDs into FTST parameter control
+  INSERT INTO CLAIMS_PARAMETER_CONTROL_FTST (
+      claim_ids, latest_comments, changed_by, updated_time, new_status, session_id, process_name
+  )
+  SELECT c.value::string        AS claim_id,
+         l.value::string        AS latest_comment,
+         CHANGED_BY,
+         USER_DATE,
          'UNDER_REVIEW',
          v_session_id,
          v_process_name
-  FROM TABLE(FLATTEN(INPUT => :CLAIM_IDS)) WITH ORDINALITY AS f;
+  FROM TABLE(FLATTEN(INPUT => CLAIM_IDS)) c
+  JOIN TABLE(FLATTEN(INPUT => LATEST_COMMENTS)) l
+    ON c.seq = l.seq;
 
-  -- Seed FTST run-control
+  -- Seed FTST run control
   INSERT INTO CLAIMS_RUN_CONTROL_FTST
   SELECT v_session_id, v_process_name, 'UPD_MASTER_TASK_FTST', 'PENDING', CURRENT_TIMESTAMP, NULL, NULL
   UNION ALL
@@ -70,140 +39,9 @@ BEGIN
   UNION ALL
   SELECT v_session_id, v_process_name, 'INS_QUE_AUD_TASK_FTST', 'PENDING', CURRENT_TIMESTAMP, NULL, NULL;
 
-  -- Trigger parent task
+  -- Trigger parent task (children run AFTER)
   EXECUTE TASK CQ_UR_DML_PARENT_TASK_FTST;
 
   RETURN v_session_id;
-END;
-$$;
-
--- ==========================================================
--- 4. FTST Parent Task
--- ==========================================================
-CREATE OR REPLACE TASK CQ_UR_DML_PARENT_TASK_FTST
-  WAREHOUSE = SFVW_D_DEV_APP_CONSOLIDATED_DATA_LOADS
-AS
-  -- Dummy dispatcher
-  SELECT CURRENT_TIMESTAMP;
-
--- ==========================================================
--- 5. FTST Child Task - Update Master
--- ==========================================================
-CREATE OR REPLACE TASK CQ_UR_UPD_MASTER_TASK_FTST
-  WAREHOUSE = SFVW_D_DEV_APP_CONSOLIDATED_DATA_LOADS
-  AFTER CQ_UR_DML_PARENT_TASK_FTST
-AS
-EXECUTE IMMEDIATE $$
-DECLARE v_session_id STRING;
-DECLARE v_process_name STRING;
-BEGIN
-  FOR rec IN (
-    SELECT DISTINCT session_id, process_name
-    FROM CLAIMS_RUN_CONTROL_FTST
-    WHERE task_name = 'UPD_MASTER_TASK_FTST' AND status = 'PENDING'
-  )
-  DO
-    LET v_session_id = rec.session_id;
-    LET v_process_name = rec.process_name;
-
-    UPDATE CLAIMS_RUN_CONTROL_FTST
-    SET status='RUNNING', start_time=CURRENT_TIMESTAMP
-    WHERE session_id=v_session_id AND process_name=v_process_name AND task_name='UPD_MASTER_TASK_FTST';
-
-    MERGE INTO CLAIMS_MASTER tgt
-    USING (
-      SELECT claim_ids, new_status, changed_by, updated_time, latest_comments
-      FROM CLAIMS_PARAMETER_CONTROL_FTST
-      WHERE session_id = v_session_id AND process_name = v_process_name
-    ) src
-    ON tgt.ceid = src.claim_ids
-    WHEN MATCHED THEN
-      UPDATE SET status=src.new_status, updated_user=src.changed_by, updated_time=src.updated_time,
-                 latest_comments=src.latest_comments;
-
-    UPDATE CLAIMS_RUN_CONTROL_FTST
-    SET status='SUCCESS', end_time=CURRENT_TIMESTAMP
-    WHERE session_id=v_session_id AND process_name=v_process_name AND task_name='UPD_MASTER_TASK_FTST';
-
-  END FOR;
-END;
-$$;
-
--- ==========================================================
--- 6. FTST Child Task - Update Queue Request
--- ==========================================================
-CREATE OR REPLACE TASK CQ_UR_UPD_QUE_REQ_TASK_FTST
-  WAREHOUSE = SFVW_D_DEV_APP_CONSOLIDATED_DATA_LOADS
-  AFTER CQ_UR_DML_PARENT_TASK_FTST
-AS
-EXECUTE IMMEDIATE $$
-DECLARE v_session_id STRING;
-DECLARE v_process_name STRING;
-BEGIN
-  FOR rec IN (
-    SELECT DISTINCT session_id, process_name
-    FROM CLAIMS_RUN_CONTROL_FTST
-    WHERE task_name = 'UPD_QUE_REQ_TASK_FTST' AND status = 'PENDING'
-  )
-  DO
-    LET v_session_id = rec.session_id;
-    LET v_process_name = rec.process_name;
-
-    UPDATE CLAIMS_RUN_CONTROL_FTST
-    SET status='RUNNING', start_time=CURRENT_TIMESTAMP
-    WHERE session_id=v_session_id AND process_name=v_process_name AND task_name='UPD_QUE_REQ_TASK_FTST';
-
-    MERGE INTO CLAIMS_QUEUE_REQUEST tgt
-    USING (
-      SELECT claim_ids, new_status, changed_by, updated_time
-      FROM CLAIMS_PARAMETER_CONTROL_FTST
-      WHERE session_id = v_session_id AND process_name = v_process_name
-    ) src
-    ON tgt.ceid = src.claim_ids
-    WHEN MATCHED THEN
-      UPDATE SET status=src.new_status, updated_user=src.changed_by, updated_time=src.updated_time;
-
-    UPDATE CLAIMS_RUN_CONTROL_FTST
-    SET status='SUCCESS', end_time=CURRENT_TIMESTAMP
-    WHERE session_id=v_session_id AND process_name=v_process_name AND task_name='UPD_QUE_REQ_TASK_FTST';
-
-  END FOR;
-END;
-$$;
-
--- ==========================================================
--- 7. FTST Child Task - Insert Audit
--- ==========================================================
-CREATE OR REPLACE TASK CQ_UR_INS_QUE_AUD_TASK_FTST
-  WAREHOUSE = SFVW_D_DEV_APP_CONSOLIDATED_DATA_LOADS
-  AFTER CQ_UR_DML_PARENT_TASK_FTST
-AS
-EXECUTE IMMEDIATE $$
-DECLARE v_session_id STRING;
-DECLARE v_process_name STRING;
-BEGIN
-  FOR rec IN (
-    SELECT DISTINCT session_id, process_name
-    FROM CLAIMS_RUN_CONTROL_FTST
-    WHERE task_name = 'INS_QUE_AUD_TASK_FTST' AND status = 'PENDING'
-  )
-  DO
-    LET v_session_id = rec.session_id;
-    LET v_process_name = rec.process_name;
-
-    UPDATE CLAIMS_RUN_CONTROL_FTST
-    SET status='RUNNING', start_time=CURRENT_TIMESTAMP
-    WHERE session_id=v_session_id AND process_name=v_process_name AND task_name='INS_QUE_AUD_TASK_FTST';
-
-    INSERT INTO CLAIMS_QUEUE_AUDIT (ceid, comments, updated_user, updated_time)
-    SELECT claim_ids, latest_comments, changed_by, updated_time
-    FROM CLAIMS_PARAMETER_CONTROL_FTST
-    WHERE session_id = v_session_id AND process_name = v_process_name;
-
-    UPDATE CLAIMS_RUN_CONTROL_FTST
-    SET status='SUCCESS', end_time=CURRENT_TIMESTAMP
-    WHERE session_id=v_session_id AND process_name=v_process_name AND task_name='INS_QUE_AUD_TASK_FTST';
-
-  END FOR;
 END;
 $$;
