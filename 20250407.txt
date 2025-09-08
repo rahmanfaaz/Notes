@@ -1,10 +1,13 @@
-SELECT RTRIM(XMLAGG(
-         XMLELEMENT(e, 
-           TO_CHAR(n.time_stamp, 'mm/dd/yyyy HH24:MI:SS') || ' ' ||
-           REGEXP_REPLACE(n.note, '[^A-Za-z0-9 ]', ' ') || CHR(10)
-           ORDER BY n.time_stamp DESC
-         ).EXTRACT('//text()')
-       ).getClobVal(), CHR(10)) AS combined_output
+SELECT RTRIM(
+         XMLAGG(
+           XMLELEMENT(note_elem,
+             TO_CHAR(n.time_stamp, 'mm/dd/yyyy HH24:MI:SS') || ' ' ||
+             REGEXP_REPLACE(n.note, '[^A-Za-z0-9 ]', ' ') || CHR(10)
+             ORDER BY n.time_stamp DESC
+           )
+         ).EXTRACT('//text()').getClobVal(),
+         CHR(10)
+       ) AS combined_output
 FROM TLM_BDR_NOTE_LINK nl
 JOIN TLM_BDR_NOTE n 
   ON nl.note_id = n.id
