@@ -1,1 +1,9 @@
-python -c "import sys; [print(f'Bad line {i+1}: {l.strip()}') for i,l in enumerate(open('TLP_ICR_CLM_HS_CASH_MATCH_TXNS_20250908_142007.json')) if l.strip() and not (l.strip().startswith(('{','}','[',']')) or ':' in l)]"
+SELECT 
+    REGEXP_REPLACE(n.note, '[^A-Za-z0-9 .,/_-]', ' ') AS cleaned_note,
+    TO_CHAR(n.time_stamp, 'DD-MON-YYYY HH24:MI:SS')   AS time_stamp
+FROM TLM_BDR_NOTE_LINK nl
+JOIN TLM_BDR_NOTE n 
+  ON nl.note_id = n.id
+WHERE nl.LINKED_ENTITY_TYPE = 8018
+  AND nl.LINKED_ENTITY_KEY  = '30715957823'
+ORDER BY n.time_stamp DESC;
