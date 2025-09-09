@@ -1,15 +1,7 @@
-SELECT RTRIM(
-         XMLAGG(
-           XMLELEMENT(note_elem,
-             TO_CHAR(n.time_stamp, 'mm/dd/yyyy HH24:MI:SS') || ' ' ||
-             REGEXP_REPLACE(n.note, '[^A-Za-z0-9 ]', ' ') || CHR(10)
-             ORDER BY n.time_stamp DESC
-           )
-         ).EXTRACT('//text()').getClobVal(),
-         CHR(10)
-       ) AS combined_output
-FROM TLM_BDR_NOTE_LINK nl
-JOIN TLM_BDR_NOTE n 
-  ON nl.note_id = n.id
-WHERE nl.LINKED_ENTITY_TYPE = 8018
-  AND nl.LINKED_ENTITY_KEY  = '30664785112';
+kubectl logs claims-ui-544fc774-mqpv5 | awk -F'[ =,]+' '/sm_user:/ { 
+  for (i=1; i<=NF; i++) { 
+    if ($i ~ /^sm_user:/) sm_user=$(i+1); 
+    if ($i ~ /^rName=/) rName=$(i); 
+  } 
+  print sm_user, rName 
+}'
