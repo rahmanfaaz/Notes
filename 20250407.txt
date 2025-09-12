@@ -1,7 +1,1 @@
-kubectl logs claims-ui-544fc774-mqpv5 | awk -F'[ =,]+' '/sm_user:/ { 
-  for (i=1; i<=NF; i++) { 
-    if ($i ~ /^sm_user:/) sm_user=$(i+1); 
-    if ($i ~ /^rName=/) rName=$(i); 
-  } 
-  print sm_user, rName 
-}'
+{ head -n 1 TLP_ICR_CLM_LG_CASH_MATCH_TXNS_*.csv | head -n 1; tail -n +2 -q TLP_ICR_CLM_LG_CASH_MATCH_TXNS_*.csv; } > /path/to/bigdrive/merged.csv
