@@ -1,1 +1,42 @@
-{ head -n 1 TLP_ICR_CLM_LG_CASH_MATCH_TXNS_*.csv | head -n 1; tail -n +2 -q TLP_ICR_CLM_LG_CASH_MATCH_TXNS_*.csv; } > /path/to/bigdrive/merged.csv
+| Component             | Test / Validation Item                        | Expected Result                          | Status | Owner |
+| --------------------- | --------------------------------------------- | ---------------------------------------- | ------ | ----- |
+| **Snowflake**         | Warehouses active, auto-suspend/resume        | Warehouses online, policies correct      | ⬜      |       |
+|                       | Roles & grants                                | Correct access, no excess privileges     | ⬜      |       |
+|                       | Schemas, tables, streams, pipes deployed      | All objects exist as per release         | ⬜      |       |
+|                       | Tasks deployed (`SHOW TASKS`)                 | Status = `started`, schedule correct     | ⬜      |       |
+|                       | Procedures/UDFs compile                       | No compilation errors                    | ⬜      |       |
+|                       | Test ingestion → stage → pipe → task          | Data flows end-to-end                    | ⬜      |       |
+|                       | Check `LOAD_HISTORY`, `TASK_HISTORY`          | No errors present                        | ⬜      |       |
+|                       | Storage integration with Azure Blob           | Read/write successful                    | ⬜      |       |
+|                       | Baseline credit consumption                   | Within expected range                    | ⬜      |       |
+| **Cosmos DB**         | DB/container created in correct RG            | Exists in subscription & resource group  | ⬜      |       |
+|                       | Throughput (RU/s) set correctly               | Matches design spec                      | ⬜      |       |
+|                       | Partition key validated                       | Matches design                           | ⬜      |       |
+|                       | Sample read/write (insert & query)            | Works without error                      | ⬜      |       |
+|                       | Role assignments                              | Correct AD groups/users only             | ⬜      |       |
+|                       | Firewall/VNET/IP rules                        | Only approved ranges allowed             | ⬜      |       |
+|                       | Diagnostic logs enabled                       | Logs flowing into Azure Monitor          | ⬜      |       |
+|                       | Backup/restore tested                         | Export & re-import successful            | ⬜      |       |
+| **Azure Integration** | Blob storage integration                      | Snowflake can read/write blob            | ⬜      |       |
+|                       | Key Vault secrets accessible                  | Secrets retrievable, no hard-coded creds | ⬜      |       |
+|                       | Monitoring setup (Log Analytics/App Insights) | Connected and collecting data            | ⬜      |       |
+|                       | Connectivity Snowflake ↔ Blob ↔ Cosmos        | End-to-end working                       | ⬜      |       |
+|                       | Resource tagging                              | All infra tagged correctly               | ⬜      |       |
+| **UI Infra**          | Build pipeline success                        | Artifacts deployed in correct env        | ⬜      |       |
+|                       | App connection strings                        | Connects to Snowflake & Cosmos           | ⬜      |       |
+|                       | Logs/telemetry captured                       | Application Insights working             | ⬜      |       |
+|                       | SSL/TLS cert validation                       | Valid, expiry > 90 days                  | ⬜      |       |
+|                       | Load balancer health                          | All nodes healthy                        | ⬜      |       |
+|                       | Smoke test UI                                 | UI loads, APIs return 200                | ⬜      |       |
+| **Security**          | IAM/AD groups validated                       | Users/groups synced correctly            | ⬜      |       |
+|                       | Secrets in Key Vault                          | No hard-coded credentials                | ⬜      |       |
+|                       | Vulnerability scan                            | No critical issues outstanding           | ⬜      |       |
+|                       | TLS version check                             | TLS >= 1.2 enforced                      | ⬜      |       |
+| **Monitoring**        | Snowflake `QUERY_HISTORY`                     | No anomalies/errors                      | ⬜      |       |
+|                       | Cosmos metrics (RU/s, latency, throttling)    | Within expected range                    | ⬜      |       |
+|                       | Azure alerts                                  | Alerts firing to right channel           | ⬜      |       |
+|                       | UI monitoring dashboards                      | Capturing latency, errors, usage         | ⬜      |       |
+| **Rollback**          | Snowflake rollback scripts ready              | Can revert to pre-release state          | ⬜      |       |
+|                       | Cosmos metadata export available              | Re-import possible                       | ⬜      |       |
+|                       | UI rollback plan                              | Last stable build redeployable           | ⬜      |       |
+|                       | Recovery time estimate                        | Documented & communicated                | ⬜      |       |
