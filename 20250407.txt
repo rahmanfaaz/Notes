@@ -1,14 +1,75 @@
-const calculateBusinessDays = (startDate, endDate) => {
-  let totalDays = Math.floor((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
-  let fullWeeks = Math.floor(totalDays / 7);
-  let businessDays = fullWeeks * 5;
+1. What Veracode Supports
 
-  // Handle leftover days
-  let remainingDays = totalDays % 7;
-  let dayOfWeek = startDate.getDay();
-  for (let i = 0; i < remainingDays; i++) {
-    if (dayOfWeek !== 0 && dayOfWeek !== 6) businessDays++;
-    dayOfWeek = (dayOfWeek + 1) % 7;
-  }
-  return businessDays;
-};
+Veracode’s static analysis engine for Oracle can only parse PL/SQL program units. These include:
+
+CREATE OR REPLACE PROCEDURE …
+
+CREATE OR REPLACE FUNCTION …
+
+CREATE OR REPLACE PACKAGE …
+
+CREATE OR REPLACE PACKAGE BODY …
+
+CREATE OR REPLACE TRIGGER …
+
+These contain procedural logic, which is where Veracode detects security flaws (e.g., SQL injection, insecure dynamic SQL, privilege misuse).
+
+2. What Veracode Does Not Support
+
+Veracode does not support scanning:
+
+SQL*Plus directives (e.g., SET SQLBLANKLINES ON, SPOOL, /)
+
+DDL (Data Definition Language) such as:
+
+CREATE OR REPLACE VIEW …
+
+CREATE TABLE …
+
+CREATE TYPE …
+
+Standalone DML scripts (e.g., INSERT, UPDATE, DELETE outside of PL/SQL code)
+
+These are rejected because Veracode’s parser is not a general SQL engine — it only looks at PL/SQL program code.
+
+3. What Happened in Our Scan
+
+We included .vw.sql files (which contain view definitions) and SQL*Plus directives (SET SQLBLANKLINES ON;).
+
+Veracode attempted to parse these as PL/SQL but failed, reporting errors such as:
+
+“extraneous input TYPE expecting {BULK, FROM, INTO, ‘;’}”
+
+“Too many parse failures. 0% of files successfully parsed.”
+
+Because the success rate dropped below the required threshold, the scan aborted with a fatal error.
+
+4. How to Fix This (Mitigation)
+
+Do include in the Veracode package:
+
+.prc, .fnc, .pks, .pkb, .pls, .trg files containing valid PL/SQL program units.
+
+Do not include in the Veracode package:
+
+.vw.sql files with CREATE VIEW …
+
+Any DDL or SQL*Plus commands
+
+Pure DML scripts
+
+For views and DDL:
+
+These must be reviewed with a different tool (e.g., SonarQube with PL/SQL plugin, PFCLCode, or Oracle SQLcl linting).
+
+Keep them in version control and deployment, but exclude them from Veracode uploads.
+
+5. Developer Action Items
+
+Separate PL/SQL program code from SQL DDL/DML scripts.
+
+Package only PL/SQL program files for Veracode scans.
+
+Use complementary tools for DDL/SQL review.
+
+Update build scripts (zip, upload) so .vw.sql and other unsupported files are filtered out automatically.
