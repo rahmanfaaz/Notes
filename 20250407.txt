@@ -1,75 +1,25 @@
-1. What Veracode Supports
+Hi Chanda,
 
-Veracode’s static analysis engine for Oracle can only parse PL/SQL program units. These include:
+Thank you for checking.
 
-CREATE OR REPLACE PROCEDURE …
+The report is generated based on commit metadata extracted from our Git repository — specifically from the commit messages and merge comments.
+We follow a structured convention where every developer includes the JIRA ID in the commit or merge message using the -m flag.
 
-CREATE OR REPLACE FUNCTION …
+For example:
 
-CREATE OR REPLACE PACKAGE …
+git commit -m "AC-483477: Deposits Auto Trigger Table pull"
 
-CREATE OR REPLACE PACKAGE BODY …
 
-CREATE OR REPLACE TRIGGER …
+or for merges:
 
-These contain procedural logic, which is where Veracode detects security flaws (e.g., SQL injection, insecure dynamic SQL, privilege misuse).
+git merge Release_QA -m "Merge branch 'Release_QA' into 'Release_QA_Feature' - AC-483477: Deposits Auto Trigger Table"
 
-2. What Veracode Does Not Support
 
-Veracode does not support scanning:
+The script/report then parses the repository logs (via git log or API) and extracts JIRA IDs using a regex pattern like:
 
-SQL*Plus directives (e.g., SET SQLBLANKLINES ON, SPOOL, /)
+(AC|TO|ICR|BUG)-[0-9]{3,6}
 
-DDL (Data Definition Language) such as:
 
-CREATE OR REPLACE VIEW …
+So as long as everyone consistently adds the JIRA ID in their commit or merge messages, these details automatically appear in the report without any manual tagging.
 
-CREATE TABLE …
-
-CREATE TYPE …
-
-Standalone DML scripts (e.g., INSERT, UPDATE, DELETE outside of PL/SQL code)
-
-These are rejected because Veracode’s parser is not a general SQL engine — it only looks at PL/SQL program code.
-
-3. What Happened in Our Scan
-
-We included .vw.sql files (which contain view definitions) and SQL*Plus directives (SET SQLBLANKLINES ON;).
-
-Veracode attempted to parse these as PL/SQL but failed, reporting errors such as:
-
-“extraneous input TYPE expecting {BULK, FROM, INTO, ‘;’}”
-
-“Too many parse failures. 0% of files successfully parsed.”
-
-Because the success rate dropped below the required threshold, the scan aborted with a fatal error.
-
-4. How to Fix This (Mitigation)
-
-Do include in the Veracode package:
-
-.prc, .fnc, .pks, .pkb, .pls, .trg files containing valid PL/SQL program units.
-
-Do not include in the Veracode package:
-
-.vw.sql files with CREATE VIEW …
-
-Any DDL or SQL*Plus commands
-
-Pure DML scripts
-
-For views and DDL:
-
-These must be reviewed with a different tool (e.g., SonarQube with PL/SQL plugin, PFCLCode, or Oracle SQLcl linting).
-
-Keep them in version control and deployment, but exclude them from Veracode uploads.
-
-5. Developer Action Items
-
-Separate PL/SQL program code from SQL DDL/DML scripts.
-
-Package only PL/SQL program files for Veracode scans.
-
-Use complementary tools for DDL/SQL review.
-
-Update build scripts (zip, upload) so .vw.sql and other unsupported files are filtered out automatically.
+We can standardize this approach across the team to maintain consistent traceability between Git commits and JIRA stories.
