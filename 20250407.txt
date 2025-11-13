@@ -1,25 +1,48 @@
-Hi Chanda,
+#!/bin/bash
+# ================================================================
+# Git commit-msg hook to enforce JIRA ID format (e.g., AC-234567)
+# ================================================================
 
-Thank you for checking.
+commit_msg_file="$1"
+commit_msg=$(cat "$commit_msg_file")
 
-The report is generated based on commit metadata extracted from our Git repository — specifically from the commit messages and merge comments.
-We follow a structured convention where every developer includes the JIRA ID in the commit or merge message using the -m flag.
+# Allow multiple prefixes (AC, TO, BUG, ICR, DEPO, etc.)
+jira_pattern='\b(AC|TO|BUG|ICR|DEPO)-[0-9]{3,6}\b'
 
-For example:
+# Skip enforcement for merge commits or version bumps
+if echo "$commit_msg" | grep -Eq "^Merge branch|^Merge pull request|Bump version"; then
+  exit 0
+fi
 
-git commit -m "AC-483477: Deposits Auto Trigger Table pull"
+# Validate commit message
+if ! echo "$commit_msg" | grep -Eq "$jira_pattern"; then
+  echo -e "\033[1;31m❌ ERROR:\033[0m Commit message must include a valid JIRA ID (e.g., AC-234567)" >&2
+  echo -e "\033[1;33m💡 Example:\033[0m  AC-234567 | Added Claims Validation for HSBC" >&2
+  exit 1
+fi
+
+exit 0
 
 
-or for merges:
+#!/bin/bash
+# ================================================================
+# Git post-checkout hook — Auto-activates JIRA enforcement hooks
+# ================================================================
 
-git merge Release_QA -m "Merge branch 'Release_QA' into 'Release_QA_Feature' - AC-483477: Deposits Auto Trigger Table"
+# Enforce hooks path
+git config core.hooksPath .githooks
+
+echo -e "\033[1;34m🪝 Git hooks path set to .githooks (auto-enforced)\033[0m"
+echo -e "\033[1;33m⚠️  Reminder:\033[0m All commit messages must include a valid JIRA ID (e.g., AC-234567)"
 
 
-The script/report then parses the repository logs (via git log or API) and extracts JIRA IDs using a regex pattern like:
+#!/bin/bash
+# ================================================================
+# Git post-merge hook — Re-applies JIRA hook enforcement
+# ================================================================
 
-(AC|TO|ICR|BUG)-[0-9]{3,6}
+# Reapply hook path after pull/merge
+git config core.hooksPath .githooks
 
-
-So as long as everyone consistently adds the JIRA ID in their commit or merge messages, these details automatically appear in the report without any manual tagging.
-
-We can standardize this approach across the team to maintain consistent traceability between Git commits and JIRA stories.
+echo -e "\033[1;32m🔁 Hooks re-activated after merge/pull.\033[0m"
+echo -e "\033[1;33m⚠️  Reminder:\033[0m Commit messages must include JIRA ID (e.g., AC-234567)"
