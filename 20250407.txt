@@ -5,12 +5,12 @@
 # Purpose : Create a self-enforcing .githooks structure that:
 #            • Validates JIRA IDs on commits and pushes
 #            • Blocks rebases on protected branches
-#            • Re-activates hooks automatically after merges and checkouts
+#            • Keeps hooks active after merges and checkouts
 #            • Self-bootstraps for all future clones of the 'certified' branch
-#            • Updates or creates a README.md with hook details
+#            • Updates or creates a README.md with hook policy documentation
 #
-# Usage   : Run this script ONCE at the root of your local repo.
-# Commit  : Only the `.githooks` folder (and updated README.md) should be pushed to 'certified'.
+# Usage   : Run once at repo root:    bash setup_git_hooks_certified.sh
+# Commit  : Push only `.githooks` and `README.md` to 'certified' branch.
 # =================================================================================================
 
 echo ""
@@ -26,7 +26,7 @@ mkdir -p .githooks
 echo -e "📁 Created \033[1;33m.githooks/\033[0m directory for version-controlled hooks."
 
 # -----------------------------------------------------------------------------------------------
-# STEP 2 — Commit Message Hook (commit-msg)
+# STEP 2 — Commit Message Hook
 # -----------------------------------------------------------------------------------------------
 cat > .githooks/commit-msg <<'EOF'
 #!/bin/bash
@@ -37,14 +37,13 @@ commit_msg_file="$1"
 commit_msg=$(cat "$commit_msg_file")
 jira_pattern='\b(AC|TO|BUG|ICR|DEPO)-[0-9]{3,6}\b'
 
-# Skip merge/version bump commits
 if echo "$commit_msg" | grep -Eq "^Merge|Bump version"; then
   exit 0
 fi
 
 if ! echo "$commit_msg" | grep -Eq "$jira_pattern"; then
   echo -e "\033[1;31m❌ ERROR:\033[0m Commit message must include a valid JIRA ID (e.g., AC-234567)" >&2
-  echo -e "\033[1;33m💡 Example:\033[0m AC-234567 | Enhanced Claims Validation" >&2
+  echo -e "\033[1;33m💡 Example:\033[0m AC-234567 | Updated API integration" >&2
   exit 1
 fi
 EOF
@@ -139,18 +138,16 @@ EOF
 # -----------------------------------------------------------------------------------------------
 chmod +x .githooks/*
 git config core.hooksPath .githooks
-
-echo ""
-echo -e "\033[1;32m✅ All Git hooks have been generated and activated locally.\033[0m"
+echo -e "\n\033[1;32m✅ All Git hooks have been generated and activated locally.\033[0m"
 
 # -----------------------------------------------------------------------------------------------
-# STEP 10 — Create or Update README.md
+# STEP 10 — Create or Update README.md (Robust version)
 # -----------------------------------------------------------------------------------------------
 repo_name=$(basename "$(git rev-parse --show-toplevel 2>/dev/null)")
 readme_path="README.md"
 
 echo ""
-echo -e "🧾 Updating repository documentation..."
+echo -e "🧾 Checking README.md ..."
 
 if [ ! -f "$readme_path" ]; then
   echo -e "📘 No README found. Creating a new one..."
@@ -183,12 +180,34 @@ The following local Git hooks are automatically installed and enforced when you 
 
 ---
 EOF
-else
-  echo -e "\n## 🔒 Git Hook Enforcement Policy\n" >> "$readme_path"
-  echo "This repository enforces automated Git hooks for JIRA ID validation, branch protection, and consistent commit hygiene under the **certified** branch." >> "$readme_path"
-fi
+  echo -e "\033[1;32m✅ README.md created successfully.\033[0m"
 
-echo -e "\033[1;32m✅ README.md updated with Git hook details.\033[0m"
+else
+  if grep -q "Git Hook Enforcement Policy" "$readme_path"; then
+    echo -e "\033[1;33mℹ️  README.md already contains a Git Hook Enforcement section. Skipping update.\033[0m"
+  else
+    echo -e "🪶 Adding Git Hook Enforcement section to existing README.md ..."
+    cat <<EOF >> "$readme_path"
+
+---
+
+## 🔒 Git Hook Enforcement Policy
+
+This repository enforces automated Git hooks for:
+- JIRA ID validation in commit and push operations  
+- Branch protection (Certified, main, master, etc.)  
+- Automatic hook reactivation after merges and checkouts  
+
+**Usage Guidelines:**
+- Hooks activate automatically after cloning or checking out the \`certified\` branch.  
+- Valid JIRA ID formats include: \`AC-123456\`, \`BUG-999\`, \`ICR-4321\`, etc.  
+- No additional setup is required for developers.
+
+---
+EOF
+    echo -e "\033[1;32m✅ README.md updated successfully.\033[0m"
+  fi
+fi
 
 # -----------------------------------------------------------------------------------------------
 # Completion Message
