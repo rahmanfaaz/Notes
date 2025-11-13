@@ -1,16 +1,15 @@
 #!/bin/bash
 # =================================================================================================
-# 💼 STRATIX / ICR — ENTERPRISE GIT HOOK FRAMEWORK INITIALIZER
+# 💼 STRATIX / ICR — ENTERPRISE GIT HOOK FRAMEWORK INITIALIZER (FINAL WITH README)
 # -------------------------------------------------------------------------------------------------
 # Purpose : Create a self-enforcing .githooks structure that:
 #            • Validates JIRA IDs on commits and pushes
 #            • Blocks rebases on protected branches
 #            • Re-activates hooks automatically after merges and checkouts
 #            • Self-bootstraps for all future clones of the 'certified' branch
+#            • Updates or creates a README.md with hook details
 #
 # Usage   : Run this script ONCE at the root of your local repo.
-#            It will generate `.githooks/` with all required hooks and auto-enable them.
-#
 # Commit  : Only the `.githooks` folder should be committed and pushed to 'certified'.
 # =================================================================================================
 
@@ -32,14 +31,10 @@ echo -e "📁 Created \033[1;33m.githooks/\033[0m directory for version-controll
 # -----------------------------------------------------------------------------------------------
 cat > .githooks/commit-msg <<'EOF'
 #!/bin/bash
-# -----------------------------------------------------------------------------
-# Enforces presence of a valid JIRA ID in each commit message.
-# -----------------------------------------------------------------------------
 commit_msg_file="$1"
 commit_msg=$(cat "$commit_msg_file")
 jira_pattern='\b(AC|TO|BUG|ICR|DEPO)-[0-9]{3,6}\b'
 
-# Skip merge/version bump commits
 if echo "$commit_msg" | grep -Eq "^Merge|Bump version"; then
   exit 0
 fi
@@ -115,13 +110,9 @@ EOF
 # -----------------------------------------------------------------------------------------------
 cat > .githooks/bootstrap.sh <<'EOF'
 #!/bin/bash
-# -----------------------------------------------------------------------------
-# AUTO-BOOTSTRAP: Enables .githooks automatically for every clone/checkout
-# -----------------------------------------------------------------------------
 repo_root="$(git rev-parse --show-toplevel 2>/dev/null)" || exit 0
 mkdir -p "$repo_root/.git/hooks"
 
-# Create a local post-checkout hook that ensures .githooks is always active
 cat > "$repo_root/.git/hooks/post-checkout" <<'INNER'
 #!/bin/bash
 repo_root="$(git rev-parse --show-toplevel 2>/dev/null)" || exit 0
@@ -133,8 +124,6 @@ exit 0
 INNER
 
 chmod +x "$repo_root/.git/hooks/post-checkout"
-
-# Activate .githooks immediately
 git -C "$repo_root" config core.hooksPath .githooks
 echo -e "\033[1;32m✅ .githooks auto-bootstrapped successfully.\033[0m"
 EOF
@@ -147,12 +136,66 @@ git config core.hooksPath .githooks
 
 echo ""
 echo -e "\033[1;32m✅ All Git hooks have been generated and activated locally.\033[0m"
+
+# -----------------------------------------------------------------------------------------------
+# STEP 10 — Create or Update README.md
+# -----------------------------------------------------------------------------------------------
+repo_name=$(basename "$(git rev-parse --show-toplevel 2>/dev/null)")
+readme_path="README.md"
+
 echo ""
-echo -e "\033[1;36m───────────────────────────────────────────────────────────────\033[0m"
+echo -e "🧾 Updating repository documentation..."
+
+if [ ! -f "$readme_path" ]; then
+  echo -e "📘 No README found. Creating a new one..."
+  cat > "$readme_path" <<EOF
+# $repo_name
+
+This repository includes an automated **Git Hook Enforcement Framework** for maintaining high code quality and traceability standards across all Stratix / ICR teams.
+
+---
+
+## 🔒 Git Hook Enforcement Policy
+
+The following local Git hooks are automatically installed and enforced when you clone or checkout the **certified** branch:
+
+| Hook | Purpose |
+|------|----------|
+| \`commit-msg\` | Ensures every commit includes a valid JIRA ID (e.g., AC-234567) |
+| \`pre-push\` | Blocks pushes without valid JIRA IDs |
+| \`pre-rebase\` | Prevents rebasing on protected branches |
+| \`post-merge\` / \`post-checkout\` | Keeps hooks always active |
+| \`bootstrap.sh\` | Self-installs hooks after clone |
+
+---
+
+### 🧠 Usage Notes
+
+1. These hooks are automatically enabled — no setup required.
+2. JIRA ID pattern supported: **AC-123456**, **ICR-54321**, **BUG-999**, etc.
+3. For feature branches, prefix your commits with the corresponding JIRA ID.
+
+---
+
+© Stratix.ai — Certified Branch Hook Governance System
+EOF
+else
+  # Append documentation section if README already exists
+  echo -e "\n## 🔒 Git Hook Enforcement Policy\n" >> "$readme_path"
+  echo "This repository enforces automated Git hooks for JIRA ID validation, branch protection, and consistent commit hygiene under the **certified** branch." >> "$readme_path"
+fi
+
+echo -e "\033[1;32m✅ README.md updated with Git hook details.\033[0m"
+
+# -----------------------------------------------------------------------------------------------
+# Completion Message
+# -----------------------------------------------------------------------------------------------
+echo ""
+echo -e "\033[1;36m───────────────────────────────────────────────────────────────────────────────\033[0m"
 echo -e "📦  Next Steps:"
 echo -e "   1️⃣  Review the generated hooks under \033[1;33m.githooks/\033[0m"
-echo -e "   2️⃣  Commit and push only the \033[1;33m.githooks/\033[0m folder to the \033[1;32mcertified\033[0m branch."
+echo -e "   2️⃣  Commit and push only the \033[1;33m.githooks/\033[0m folder and \033[1;33mREADME.md\033[0m to the \033[1;32mcertified\033[0m branch."
 echo -e "   3️⃣  When anyone clones or checks out \033[1;32mcertified\033[0m,"
 echo -e "       the hooks will self-bootstrap and enforce automatically. 💪"
-echo -e "\033[1;36m───────────────────────────────────────────────────────────────\033[0m"
+echo -e "\033[1;36m───────────────────────────────────────────────────────────────────────────────\033[0m"
 echo ""
