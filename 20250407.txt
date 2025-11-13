@@ -1,6 +1,6 @@
 #!/bin/bash
 # =================================================================================================
-# 💼 STRATIX / ICR — ENTERPRISE GIT HOOK FRAMEWORK INITIALIZER (FINAL WITH README)
+# 🏢 ENTERPRISE GIT HOOK FRAMEWORK INITIALIZER (CERTIFIED BRANCH)
 # -------------------------------------------------------------------------------------------------
 # Purpose : Create a self-enforcing .githooks structure that:
 #            • Validates JIRA IDs on commits and pushes
@@ -10,12 +10,12 @@
 #            • Updates or creates a README.md with hook details
 #
 # Usage   : Run this script ONCE at the root of your local repo.
-# Commit  : Only the `.githooks` folder should be committed and pushed to 'certified'.
+# Commit  : Only the `.githooks` folder (and updated README.md) should be pushed to 'certified'.
 # =================================================================================================
 
 echo ""
 echo -e "\033[1;36m═══════════════════════════════════════════════════════════════════════════════\033[0m"
-echo -e "🚀  Initializing Stratix / ICR Git Hook Enforcement Framework"
+echo -e "🚀  Initializing Enterprise Git Hook Enforcement Framework"
 echo -e "\033[1;36m═══════════════════════════════════════════════════════════════════════════════\033[0m"
 echo ""
 
@@ -23,7 +23,6 @@ echo ""
 # STEP 1 — Create directory structure
 # -----------------------------------------------------------------------------------------------
 mkdir -p .githooks
-
 echo -e "📁 Created \033[1;33m.githooks/\033[0m directory for version-controlled hooks."
 
 # -----------------------------------------------------------------------------------------------
@@ -31,17 +30,21 @@ echo -e "📁 Created \033[1;33m.githooks/\033[0m directory for version-controll
 # -----------------------------------------------------------------------------------------------
 cat > .githooks/commit-msg <<'EOF'
 #!/bin/bash
+# -----------------------------------------------------------------------------
+# Enforces presence of a valid JIRA ID in each commit message.
+# -----------------------------------------------------------------------------
 commit_msg_file="$1"
 commit_msg=$(cat "$commit_msg_file")
 jira_pattern='\b(AC|TO|BUG|ICR|DEPO)-[0-9]{3,6}\b'
 
+# Skip merge/version bump commits
 if echo "$commit_msg" | grep -Eq "^Merge|Bump version"; then
   exit 0
 fi
 
 if ! echo "$commit_msg" | grep -Eq "$jira_pattern"; then
   echo -e "\033[1;31m❌ ERROR:\033[0m Commit message must include a valid JIRA ID (e.g., AC-234567)" >&2
-  echo -e "\033[1;33m💡 Example:\033[0m AC-234567 | Enhanced Claims Validation for HSBC" >&2
+  echo -e "\033[1;33m💡 Example:\033[0m AC-234567 | Enhanced Claims Validation" >&2
   exit 1
 fi
 EOF
@@ -110,6 +113,9 @@ EOF
 # -----------------------------------------------------------------------------------------------
 cat > .githooks/bootstrap.sh <<'EOF'
 #!/bin/bash
+# -----------------------------------------------------------------------------
+# AUTO-BOOTSTRAP: Enables .githooks automatically for every clone/checkout
+# -----------------------------------------------------------------------------
 repo_root="$(git rev-parse --show-toplevel 2>/dev/null)" || exit 0
 mkdir -p "$repo_root/.git/hooks"
 
@@ -151,7 +157,7 @@ if [ ! -f "$readme_path" ]; then
   cat > "$readme_path" <<EOF
 # $repo_name
 
-This repository includes an automated **Git Hook Enforcement Framework** for maintaining high code quality and traceability standards across all Stratix / ICR teams.
+This repository includes an automated **Git Hook Enforcement Framework** for maintaining consistent commit hygiene and traceability standards.
 
 ---
 
@@ -171,16 +177,13 @@ The following local Git hooks are automatically installed and enforced when you 
 
 ### 🧠 Usage Notes
 
-1. These hooks are automatically enabled — no setup required.
-2. JIRA ID pattern supported: **AC-123456**, **ICR-54321**, **BUG-999**, etc.
+1. These hooks are automatically enabled — no manual setup required.  
+2. Supported JIRA ID patterns: **AC-123456**, **ICR-54321**, **BUG-999**, etc.  
 3. For feature branches, prefix your commits with the corresponding JIRA ID.
 
 ---
-
-© Stratix.ai — Certified Branch Hook Governance System
 EOF
 else
-  # Append documentation section if README already exists
   echo -e "\n## 🔒 Git Hook Enforcement Policy\n" >> "$readme_path"
   echo "This repository enforces automated Git hooks for JIRA ID validation, branch protection, and consistent commit hygiene under the **certified** branch." >> "$readme_path"
 fi
