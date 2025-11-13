@@ -7,7 +7,7 @@
 #            • Blocks rebases on protected branches
 #            • Keeps hooks active after merges and checkouts
 #            • Self-bootstraps for all future clones of the 'certified' branch
-#            • Updates or creates a README.md with hook policy documentation
+#            • Appends or creates README.md with Git Hook Enforcement details
 #
 # Usage   : Run once at repo root:    bash setup_git_hooks_certified.sh
 # Commit  : Push only `.githooks` and `README.md` to 'certified' branch.
@@ -141,73 +141,43 @@ git config core.hooksPath .githooks
 echo -e "\n\033[1;32m✅ All Git hooks have been generated and activated locally.\033[0m"
 
 # -----------------------------------------------------------------------------------------------
-# STEP 10 — Create or Update README.md (Robust version)
+# STEP 10 — Create or Always Append README.md
 # -----------------------------------------------------------------------------------------------
 repo_name=$(basename "$(git rev-parse --show-toplevel 2>/dev/null)")
 readme_path="README.md"
 
 echo ""
-echo -e "🧾 Checking README.md ..."
+echo -e "🧾 Updating README.md with Git Hook Enforcement Policy..."
 
 if [ ! -f "$readme_path" ]; then
   echo -e "📘 No README found. Creating a new one..."
-  cat > "$readme_path" <<EOF
-# $repo_name
+  echo "# $repo_name" > "$readme_path"
+  echo "" >> "$readme_path"
+fi
 
-This repository includes an automated **Git Hook Enforcement Framework** for maintaining consistent commit hygiene and traceability standards.
+# Always append section (even if it already exists)
+cat <<EOF >> "$readme_path"
 
 ---
 
 ## 🔒 Git Hook Enforcement Policy
 
-The following local Git hooks are automatically installed and enforced when you clone or checkout the **certified** branch:
-
-| Hook | Purpose |
-|------|----------|
-| \`commit-msg\` | Ensures every commit includes a valid JIRA ID (e.g., AC-234567) |
-| \`pre-push\` | Blocks pushes without valid JIRA IDs |
-| \`pre-rebase\` | Prevents rebasing on protected branches |
-| \`post-merge\` / \`post-checkout\` | Keeps hooks always active |
-| \`bootstrap.sh\` | Self-installs hooks after clone |
-
----
+This repository includes an automated **Git Hook Enforcement Framework** that ensures:
+- ✅ Every commit and push message contains a valid JIRA ID (e.g., AC-123456)
+- 🚫 Rebases are blocked on protected branches (Certified, main, master, etc.)
+- 🔁 Hooks are reactivated automatically after merges or checkouts
 
 ### 🧠 Usage Notes
-
-1. These hooks are automatically enabled — no manual setup required.  
+1. Hooks are automatically enabled — no manual setup is required.  
 2. Supported JIRA ID patterns: **AC-123456**, **ICR-54321**, **BUG-999**, etc.  
-3. For feature branches, prefix your commits with the corresponding JIRA ID.
+3. For feature branches, prefix commits with their corresponding JIRA ID.  
 
 ---
+
+*This policy is automatically enforced when working on the **certified** branch.*
 EOF
-  echo -e "\033[1;32m✅ README.md created successfully.\033[0m"
 
-else
-  if grep -q "Git Hook Enforcement Policy" "$readme_path"; then
-    echo -e "\033[1;33mℹ️  README.md already contains a Git Hook Enforcement section. Skipping update.\033[0m"
-  else
-    echo -e "🪶 Adding Git Hook Enforcement section to existing README.md ..."
-    cat <<EOF >> "$readme_path"
-
----
-
-## 🔒 Git Hook Enforcement Policy
-
-This repository enforces automated Git hooks for:
-- JIRA ID validation in commit and push operations  
-- Branch protection (Certified, main, master, etc.)  
-- Automatic hook reactivation after merges and checkouts  
-
-**Usage Guidelines:**
-- Hooks activate automatically after cloning or checking out the \`certified\` branch.  
-- Valid JIRA ID formats include: \`AC-123456\`, \`BUG-999\`, \`ICR-4321\`, etc.  
-- No additional setup is required for developers.
-
----
-EOF
-    echo -e "\033[1;32m✅ README.md updated successfully.\033[0m"
-  fi
-fi
+echo -e "\033[1;32m✅ README.md has been updated or created successfully.\033[0m"
 
 # -----------------------------------------------------------------------------------------------
 # Completion Message
@@ -215,9 +185,8 @@ fi
 echo ""
 echo -e "\033[1;36m───────────────────────────────────────────────────────────────────────────────\033[0m"
 echo -e "📦  Next Steps:"
-echo -e "   1️⃣  Review the generated hooks under \033[1;33m.githooks/\033[0m"
-echo -e "   2️⃣  Commit and push only the \033[1;33m.githooks/\033[0m folder and \033[1;33mREADME.md\033[0m to the \033[1;32mcertified\033[0m branch."
-echo -e "   3️⃣  When anyone clones or checks out \033[1;32mcertified\033[0m,"
-echo -e "       the hooks will self-bootstrap and enforce automatically. 💪"
+echo -e "   1️⃣  Review hooks in \033[1;33m.githooks/\033[0m"
+echo -e "   2️⃣  Commit and push \033[1;33m.githooks/\033[0m and \033[1;33mREADME.md\033[0m to \033[1;32mcertified\033[0m branch"
+echo -e "   3️⃣  Hooks will auto-enable on clone or checkout. 💪"
 echo -e "\033[1;36m───────────────────────────────────────────────────────────────────────────────\033[0m"
 echo ""
