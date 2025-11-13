@@ -1,48 +1,90 @@
-#!/bin/bash
-# ================================================================
-# Git commit-msg hook to enforce JIRA ID format (e.g., AC-234567)
-# ================================================================
+mkdir -p .githooks .git-hooks-bootstrap
 
+# --- commit-msg ---
+cat > .githooks/commit-msg <<'EOF'
+#!/bin/bash
 commit_msg_file="$1"
 commit_msg=$(cat "$commit_msg_file")
-
-# Allow multiple prefixes (AC, TO, BUG, ICR, DEPO, etc.)
 jira_pattern='\b(AC|TO|BUG|ICR|DEPO)-[0-9]{3,6}\b'
 
-# Skip enforcement for merge commits or version bumps
-if echo "$commit_msg" | grep -Eq "^Merge branch|^Merge pull request|Bump version"; then
+if echo "$commit_msg" | grep -Eq "^Merge|Bump version"; then
   exit 0
 fi
 
-# Validate commit message
 if ! echo "$commit_msg" | grep -Eq "$jira_pattern"; then
-  echo -e "\033[1;31m❌ ERROR:\033[0m Commit message must include a valid JIRA ID (e.g., AC-234567)" >&2
-  echo -e "\033[1;33m💡 Example:\033[0m  AC-234567 | Added Claims Validation for HSBC" >&2
+  echo -e "\033[1;31m❌ ERROR:\033[0m Missing valid JIRA ID (e.g., AC-123456)" >&2
   exit 1
 fi
+EOF
 
+# --- post-checkout ---
+cat > .githooks/post-checkout <<'EOF'
+#!/bin/bash
+git config core.hooksPath .githooks
+echo -e "\033[1;34m🪝 Hooks active (.githooks)\033[0m"
+EOF
+
+# --- post-merge ---
+cat > .githooks/post-merge <<'EOF'
+#!/bin/bash
+git config core.hooksPath .githooks
+echo -e "\033[1;32m🔁 Hooks reactivated after merge.\033[0m"
+EOF
+
+# --- pre-rebase ---
+cat > .githooks/pre-rebase <<'EOF'
+#!/bin/bash
+protected="Release_QA|Release_PROD|develop|master"
+branch=$(git rev-parse --abbrev-ref HEAD)
+if echo "$branch" | grep -Eq "$protected"; then
+  echo -e "\033[1;31m🚫 Rebase not allowed on protected branch: $branch\033[0m"
+  exit 1
+fi
+EOF
+
+# --- pre-push ---
+cat > .githooks/pre-push <<'EOF'
+#!/bin/bash
+jira_pattern='\b(AC|TO|BUG|ICR|DEPO)-[0-9]{3,6}\b'
+msg=$(git log -1 --pretty=%B)
+if ! echo "$msg" | grep -Eq "$jira_pattern"; then
+  echo -e "\033[1;31m❌ Push blocked: missing JIRA ID (e.g., AC-123456)\033[0m"
+  exit 1
+fi
+EOF
+
+# --- pre-commit ---
+cat > .githooks/pre-commit <<'EOF'
+#!/bin/bash
+if ! git diff --cached --name-only | grep -q .; then
+  echo "⚠️  No staged files to commit."
+  exit 0
+fi
+echo "🔍 Pre-commit check passed..."
+EOF
+
+# --- bootstrap installer ---
+cat > .git-hooks-bootstrap/bootstrap.sh <<'EOF'
+#!/bin/bash
+# AUTO-BOOTSTRAP: Enables .githooks on first checkout for every clone
+repo_root="$(git rev-parse --show-toplevel 2>/dev/null)" || exit 0
+mkdir -p "$repo_root/.git/hooks"
+cat > "$repo_root/.git/hooks/post-checkout" <<'INNER'
+#!/bin/bash
+repo_root="$(git rev-parse --show-toplevel 2>/dev/null)" || exit 0
+if [ -d "$repo_root/.githooks" ]; then
+  git -C "$repo_root" config core.hooksPath .githooks
+  echo -e "\033[1;34m🪝 Project hooks activated (.githooks)\033[0m"
+fi
 exit 0
+INNER
+chmod +x "$repo_root/.git/hooks/post-checkout"
+git -C "$repo_root" config core.hooksPath .githooks
+echo -e "\033[1;32m✅ .githooks auto-bootstrapped successfully.\033[0m"
+EOF
 
+chmod +x .githooks/* .git-hooks-bootstrap/bootstrap.sh
 
-#!/bin/bash
-# ================================================================
-# Git post-checkout hook — Auto-activates JIRA enforcement hooks
-# ================================================================
-
-# Enforce hooks path
-git config core.hooksPath .githooks
-
-echo -e "\033[1;34m🪝 Git hooks path set to .githooks (auto-enforced)\033[0m"
-echo -e "\033[1;33m⚠️  Reminder:\033[0m All commit messages must include a valid JIRA ID (e.g., AC-234567)"
-
-
-#!/bin/bash
-# ================================================================
-# Git post-merge hook — Re-applies JIRA hook enforcement
-# ================================================================
-
-# Reapply hook path after pull/merge
-git config core.hooksPath .githooks
-
-echo -e "\033[1;32m🔁 Hooks re-activated after merge/pull.\033[0m"
-echo -e "\033[1;33m⚠️  Reminder:\033[0m Commit messages must include JIRA ID (e.g., AC-234567)"
+# --- zip everything ---
+zip -r git-hooks-package.zip .githooks .git-hooks-bootstrap >/dev/null
+echo "✅ Created git-hooks-package.zip with all files!"
