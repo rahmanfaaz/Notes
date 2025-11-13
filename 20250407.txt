@@ -1,24 +1,40 @@
 #!/bin/bash
-# =====================================================================
-# STRATIX / ICR — AUTOMATED GIT HOOK ENFORCEMENT SETUP (FINAL)
-# ---------------------------------------------------------------------
-# Creates .githooks/ with all hooks + bootstrap inside it.
-# Once committed and pushed to 'develop', every clone will automatically
-# activate the enforcement system on first checkout.
-# =====================================================================
+# =================================================================================================
+# 💼 STRATIX / ICR — ENTERPRISE GIT HOOK FRAMEWORK INITIALIZER
+# -------------------------------------------------------------------------------------------------
+# Purpose : Create a self-enforcing .githooks structure that:
+#            • Validates JIRA IDs on commits and pushes
+#            • Blocks rebases on protected branches
+#            • Re-activates hooks automatically after merges and checkouts
+#            • Self-bootstraps for all future clones of the 'certified' branch
+#
+# Usage   : Run this script ONCE at the root of your local repo.
+#            It will generate `.githooks/` with all required hooks and auto-enable them.
+#
+# Commit  : Only the `.githooks` folder should be committed and pushed to 'certified'.
+# =================================================================================================
 
-echo "🚀 Initializing Git hook enforcement setup..."
+echo ""
+echo -e "\033[1;36m═══════════════════════════════════════════════════════════════════════════════\033[0m"
+echo -e "🚀  Initializing Stratix / ICR Git Hook Enforcement Framework"
+echo -e "\033[1;36m═══════════════════════════════════════════════════════════════════════════════\033[0m"
+echo ""
 
-# ---------------------------------------------------------------------
-# Create .githooks directory
-# ---------------------------------------------------------------------
+# -----------------------------------------------------------------------------------------------
+# STEP 1 — Create directory structure
+# -----------------------------------------------------------------------------------------------
 mkdir -p .githooks
 
-# ---------------------------------------------------------------------
-# 1️⃣ commit-msg — Enforce valid JIRA ID pattern
-# ---------------------------------------------------------------------
+echo -e "📁 Created \033[1;33m.githooks/\033[0m directory for version-controlled hooks."
+
+# -----------------------------------------------------------------------------------------------
+# STEP 2 — Commit Message Hook (commit-msg)
+# -----------------------------------------------------------------------------------------------
 cat > .githooks/commit-msg <<'EOF'
 #!/bin/bash
+# -----------------------------------------------------------------------------
+# Enforces presence of a valid JIRA ID in each commit message.
+# -----------------------------------------------------------------------------
 commit_msg_file="$1"
 commit_msg=$(cat "$commit_msg_file")
 jira_pattern='\b(AC|TO|BUG|ICR|DEPO)-[0-9]{3,6}\b'
@@ -30,35 +46,35 @@ fi
 
 if ! echo "$commit_msg" | grep -Eq "$jira_pattern"; then
   echo -e "\033[1;31m❌ ERROR:\033[0m Commit message must include a valid JIRA ID (e.g., AC-234567)" >&2
-  echo -e "\033[1;33m💡 Example:\033[0m AC-234567 | Added Claims Validation for HSBC" >&2
+  echo -e "\033[1;33m💡 Example:\033[0m AC-234567 | Enhanced Claims Validation for HSBC" >&2
   exit 1
 fi
 EOF
 
-# ---------------------------------------------------------------------
-# 2️⃣ post-checkout — Keep hooks active after branch switch
-# ---------------------------------------------------------------------
+# -----------------------------------------------------------------------------------------------
+# STEP 3 — Post-Checkout Hook
+# -----------------------------------------------------------------------------------------------
 cat > .githooks/post-checkout <<'EOF'
 #!/bin/bash
 git config core.hooksPath .githooks
 echo -e "\033[1;34m🪝 Hooks active (.githooks)\033[0m"
 EOF
 
-# ---------------------------------------------------------------------
-# 3️⃣ post-merge — Re-apply hooks after merge
-# ---------------------------------------------------------------------
+# -----------------------------------------------------------------------------------------------
+# STEP 4 — Post-Merge Hook
+# -----------------------------------------------------------------------------------------------
 cat > .githooks/post-merge <<'EOF'
 #!/bin/bash
 git config core.hooksPath .githooks
 echo -e "\033[1;32m🔁 Hooks reactivated after merge.\033[0m"
 EOF
 
-# ---------------------------------------------------------------------
-# 4️⃣ pre-rebase — Block rebases on protected branches
-# ---------------------------------------------------------------------
+# -----------------------------------------------------------------------------------------------
+# STEP 5 — Pre-Rebase Hook
+# -----------------------------------------------------------------------------------------------
 cat > .githooks/pre-rebase <<'EOF'
 #!/bin/bash
-protected="Release_QA|Release_PROD|develop|master"
+protected="Release_QA|Certified|main|master"
 branch=$(git rev-parse --abbrev-ref HEAD)
 if echo "$branch" | grep -Eq "$protected"; then
   echo -e "\033[1;31m🚫 Rebase not allowed on protected branch: $branch\033[0m"
@@ -66,23 +82,25 @@ if echo "$branch" | grep -Eq "$protected"; then
 fi
 EOF
 
-# ---------------------------------------------------------------------
-# 5️⃣ pre-push — Validate JIRA ID before push
-# ---------------------------------------------------------------------
+# -----------------------------------------------------------------------------------------------
+# STEP 6 — Pre-Push Hook
+# -----------------------------------------------------------------------------------------------
 cat > .githooks/pre-push <<'EOF'
 #!/bin/bash
 jira_pattern='\b(AC|TO|BUG|ICR|DEPO)-[0-9]{3,6}\b'
 msg=$(git log -1 --pretty=%B)
+
 if ! echo "$msg" | grep -Eq "$jira_pattern"; then
-  echo -e "\033[1;31m❌ Push blocked: missing valid JIRA ID (e.g., AC-123456)\033[0m"
+  echo -e "\033[1;31m❌ Push blocked:\033[0m missing valid JIRA ID (e.g., AC-123456)"
   exit 1
 fi
+
 echo -e "\033[1;32m✅ Push validation passed.\033[0m"
 EOF
 
-# ---------------------------------------------------------------------
-# 6️⃣ pre-commit — Simple staged-file check
-# ---------------------------------------------------------------------
+# -----------------------------------------------------------------------------------------------
+# STEP 7 — Pre-Commit Hook
+# -----------------------------------------------------------------------------------------------
 cat > .githooks/pre-commit <<'EOF'
 #!/bin/bash
 if ! git diff --cached --name-only | grep -q .; then
@@ -92,18 +110,18 @@ fi
 echo "🔍 Pre-commit check passed..."
 EOF
 
-# ---------------------------------------------------------------------
-# 7️⃣ bootstrap — Installs post-checkout activator in .git/hooks
-# ---------------------------------------------------------------------
+# -----------------------------------------------------------------------------------------------
+# STEP 8 — Bootstrap Hook
+# -----------------------------------------------------------------------------------------------
 cat > .githooks/bootstrap.sh <<'EOF'
 #!/bin/bash
-# =====================================================================
+# -----------------------------------------------------------------------------
 # AUTO-BOOTSTRAP: Enables .githooks automatically for every clone/checkout
-# =====================================================================
+# -----------------------------------------------------------------------------
 repo_root="$(git rev-parse --show-toplevel 2>/dev/null)" || exit 0
 mkdir -p "$repo_root/.git/hooks"
 
-# Create lightweight post-checkout activator
+# Create a local post-checkout hook that ensures .githooks is always active
 cat > "$repo_root/.git/hooks/post-checkout" <<'INNER'
 #!/bin/bash
 repo_root="$(git rev-parse --show-toplevel 2>/dev/null)" || exit 0
@@ -116,22 +134,25 @@ INNER
 
 chmod +x "$repo_root/.git/hooks/post-checkout"
 
-# Immediately activate .githooks for this repo
+# Activate .githooks immediately
 git -C "$repo_root" config core.hooksPath .githooks
 echo -e "\033[1;32m✅ .githooks auto-bootstrapped successfully.\033[0m"
 EOF
 
-# ---------------------------------------------------------------------
-# Permissions
-# ---------------------------------------------------------------------
+# -----------------------------------------------------------------------------------------------
+# STEP 9 — Permissions & Activation
+# -----------------------------------------------------------------------------------------------
 chmod +x .githooks/*
-
-# ---------------------------------------------------------------------
-# Activate hooks now
-# ---------------------------------------------------------------------
 git config core.hooksPath .githooks
 
-echo -e "\n\033[1;32m✅ All Git hooks installed, bootstrapped, and active from .githooks.\033[0m"
-echo -e "\033[1;34mNext Steps:\033[0m"
-echo -e "  • Commit and push this script + .githooks folder to 'develop'."
-echo -e "  • When anyone clones 'develop', bootstrap.sh will auto-install the .git/hooks activator.\n"
+echo ""
+echo -e "\033[1;32m✅ All Git hooks have been generated and activated locally.\033[0m"
+echo ""
+echo -e "\033[1;36m───────────────────────────────────────────────────────────────\033[0m"
+echo -e "📦  Next Steps:"
+echo -e "   1️⃣  Review the generated hooks under \033[1;33m.githooks/\033[0m"
+echo -e "   2️⃣  Commit and push only the \033[1;33m.githooks/\033[0m folder to the \033[1;32mcertified\033[0m branch."
+echo -e "   3️⃣  When anyone clones or checks out \033[1;32mcertified\033[0m,"
+echo -e "       the hooks will self-bootstrap and enforce automatically. 💪"
+echo -e "\033[1;36m───────────────────────────────────────────────────────────────\033[0m"
+echo ""
