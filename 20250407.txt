@@ -1,120 +1,104 @@
-#!/bin/bash
-# =====================================================================
-#   ENTERPRISE GIT HOOKS ENFORCEMENT — ONE-SHOT INSTALLER
-#   Creates .githooks/, installs self-healing hooks, configures Git.
-# =====================================================================
+# Snowflake Schema Validation Tool
+A web-based application that allows users to pull SQL scripts from a Git repository, replace variables from Helm chart values, and validate the resulting SQL against a Snowflake connection. The main goal is to ensure SQL correctness before deployments.
 
-set -e
+---
 
-repo_root="$(git rev-parse --show-toplevel 2>/dev/null)" || {
-  echo "❌ ERROR: Must run inside a Git repository."
-  exit 1
-}
+## 🎯 Purpose
+The tool enables developers to:
+1. Fetch SQL scripts from a Git repository.
+2. Inject variable values defined in Helm charts.
+3. View and edit the final SQL script.
+4. Validate SQL against a Snowflake "playground" connection.
+5. Determine whether SQL is valid based on error patterns (e.g., permission errors vs syntax errors).
 
-echo "📁 Repository root: $repo_root"
-hooks_dir="$repo_root/.githooks"
-mkdir -p "$hooks_dir"
+---
 
-# =====================================================================
-# 1. CREATE bootstrap.sh (self-healing auto-loader)
-# =====================================================================
-cat > "$hooks_dir/bootstrap.sh" << 'EOF'
-#!/bin/bash
-repo_root="$(git rev-parse --show-toplevel 2>/dev/null)" || exit 0
-githooks_dir="$repo_root/.githooks"
+## 🧩 Key Features
 
-# Force hooksPath
-git -C "$repo_root" config core.hooksPath .githooks >/dev/null
+### **1. Git Integration**
+- Ability to connect to a Git repository.
+- Select branch and folder path.
+- List and fetch SQL files from the repo.
+- Load selected SQL file into the UI.
 
-# Restore folder if missing
-if [ ! -d "$githooks_dir" ] || [ -z "$(ls -A "$githooks_dir")" ]; then
-    echo "⚠️  Restoring missing .githooks..."
-    git restore .githooks 2>/dev/null || git checkout HEAD -- .githooks
-    echo "✔️  .githooks restored."
-fi
+### **2. Helm Variable Replacement**
+- Load and read `values.yaml` or other variable files from the repo.
+- Apply variable substitution into the SQL template.
+- Display the rendered SQL to the user.
 
-chmod +x "$githooks_dir"/* 2>/dev/null
+### **3. SQL Editing Interface**
+- Provide an online editor to:
+  - View original script
+  - View rendered script (after variable replacement)
+  - Make changes if necessary
+- Option to switch between original and rendered versions.
 
-exit 0
-EOF
+### **4. Snowflake Validation**
+- Connect to a Snowflake environment designed only for validation.
+- Run the rendered SQL against this environment.
+- Capture and classify errors into:
+  - Syntax errors → INVALID
+  - Compilation errors → INVALID
+  - Permission errors → VALID (script is correct)
+  - Successful execution → VALID
 
-# =====================================================================
-# 2. CREATE commit-msg Hook (JIRA enforcement)
-# =====================================================================
-cat > "$hooks_dir/commit-msg" << 'EOF'
-#!/bin/bash
-commit_msg_file="$1"
-commit_msg="$(cat "$commit_msg_file")"
+### **5. Results Display**
+- Show validation results clearly.
+- Highlight lines where errors were detected.
+- Provide friendly messages indicating whether SQL is valid.
+- Allow export of results.
 
-jira_pattern="(AC|TO|ICR|BUG|DEPO)-[0-9]{3,6}"
+### **6. User Workflow**
+1. User enters Git repo URL.
+2. User selects branch.
+3. UI loads and displays SQL files.
+4. User chooses a file.
+5. System loads Helm variables.
+6. System renders final SQL.
+7. User reviews SQL in editor.
+8. User clicks **Validate**.
+9. Backend validates SQL and returns:
+   - Valid (permission-only failures)
+   - Invalid (syntax/compilation issues)
+10. Results shown in UI.
 
-if ! echo "$commit_msg" | grep -Eq "$jira_pattern"; then
-  echo "❌ ERROR: Commit message must include a valid JIRA ID (e.g. AC-234567)"
-  exit 1
-fi
+---
 
-exit 0
-EOF
+## 🧭 Non-Functional Requirements
+- Clean, simple UI suitable for developers.
+- Must never modify real Snowflake objects.
+- Validation environment must be isolated and safe.
+- Fast rendering and validation experience.
+- Scalable approach to handle multiple users.
 
-# =====================================================================
-# 3. CREATE post-checkout Hook
-# =====================================================================
-cat > "$hooks_dir/post-checkout" << 'EOF'
-#!/bin/bash
-$(git rev-parse --show-toplevel)/.githooks/bootstrap.sh
-EOF
+---
 
-# =====================================================================
-# 4. CREATE post-merge Hook
-# =====================================================================
-cat > "$hooks_dir/post-merge" << 'EOF'
-#!/bin/bash
-$(git rev-parse --show-toplevel)/.githooks/bootstrap.sh
-EOF
+## 🚦 Validation Rules Summary
+A script is considered:
 
-# =====================================================================
-# 5. CREATE verify_hooks.sh (validate executables)
-# =====================================================================
-cat > "$hooks_dir/verify_hooks.sh" << 'EOF'
-#!/bin/bash
-repo_root="$(git rev-parse --show-toplevel)"
-chmod +x "$repo_root/.githooks"/*
-EOF
+### ✅ **Valid**
+- Executes without error  
+**OR**
+- Fails only with permission-related errors
 
-# Make everything executable
-chmod +x "$hooks_dir"/*
+### ❌ **Invalid**
+- Syntax errors
+- SQL compilation failures
+- Incorrect SQL format
+- Missing keywords or malformed statements
 
-# =====================================================================
-# 6. Configure Git globally for the repo
-# =====================================================================
-git config core.hooksPath .githooks
+---
 
-echo "✔️ Git hooksPath set to .githooks"
+## 📁 Outputs & Deliverables
+The LLM/system should produce:
 
-# =====================================================================
-# 7. Update or create README.md
-# =====================================================================
-readme="$repo_root/README.md"
+- A working UI for loading and editing SQL.
+- Integration with Git to fetch SQL files.
+- Variable replacement using Helm.
+- A validation engine that runs SQL on Snowflake.
+- A clean results panel for developers.
+- Documentation on usage.
 
-echo "" >> "$readme"
-echo "## 🔒 Git Hooks Enforcement" >> "$readme"
-echo "This repository uses an enterprise-grade Git hooks system stored in **.githooks/**." >> "$readme"
-echo "Hooks are automatically installed, updated, and self-healed on every clone, checkout, merge, rebase, or pull." >> "$readme"
-echo "" >> "$readme"
-echo "**Rules Enforced:**" >> "$readme"
-echo "- JIRA ID required in every commit message (AC-123456 format)" >> "$readme"
-echo "- Hooks auto-repair if deleted" >> "$readme"
-echo "- Hooks automatically activate for every developer" >> "$readme"
+---
 
-echo "📝 README.md updated."
-
-# =====================================================================
-# 8. Final message
-# =====================================================================
-echo "==================================================================="
-echo "✔️ ENTERPRISE GITHOOKS INSTALLED SUCCESSFULLY"
-echo "➡ Commit and push .githooks to the certified Develop branch."
-echo "➡ Any clone or branch from Develop will now auto-enforce hooks."
-echo "==================================================================="
-
-exit 0
+# End of Document
