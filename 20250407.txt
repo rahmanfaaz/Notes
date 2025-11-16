@@ -1,53 +1,56 @@
-import re
-from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
+import pandas as pd
+from enhanced_copilot_optimizer import optimize_prompt
 
-# Rule-based cleanup
-def clean_text(prompt: str) -> str:
-    fillers = [
-        r"\bplease\b", r"\bwrite me\b", r"\bi need\b", r"\bcan you\b",
-        r"\bcould you\b", r"\bcreate\b", r"\bgenerate\b", r"\bshow me\b",
-        r"\breturn\b", r"\bthat\b", r"\bwhich\b"
-    ]
-    for filler in fillers:
-        prompt = re.sub(filler, "", prompt, flags=re.IGNORECASE)
-    return re.sub(r'\s+', ' ', prompt).strip()
+def token_count(text):
+    return len(text.split())
 
+# Path to the CSV file you downloaded
+CSV_PATH = "prompts.csv"
 
-# Keyword breakdown
-def to_keyword_style(prompt: str) -> str:
-    parts = re.split(r'[.;]', prompt)
-    parts = [p.strip() for p in parts if p.strip()]
-    return "\n".join(f"- {p}" for p in parts)
+def run_test(limit=None):
+    df = pd.read_csv(CSV_PATH)
 
+    if limit:
+        df = df.head(limit)
 
-# LLM-powered refinement
-class PromptOptimizer:
-    def __init__(self, model_name="google/flan-t5-small"):
-        print("Loading model... (one-time load)")
-        self.tokenizer = AutoTokenizer.from_pretrained(model_name)
-        self.model = AutoModelForSeq2SeqLM.from_pretrained(model_name)
+    results = []
 
-    def llm_optimize(self, prompt: str) -> str:
-        input_text = f"Rewrite concisely as structured instructions:\n{prompt}"
-        inputs = self.tokenizer(input_text, return_tensors="pt", truncation=True)
-        output = self.model.generate(**inputs, max_length=100)
-        return self.tokenizer.decode(output[0], skip_special_tokens=True)
+    for idx, row in df.iterrows():
+        raw = row["prompt"]
+        optimized = optimize_prompt(raw)
 
+        before = token_count(raw)
+        after = token_count(optimized)
 
-def optimize_prompt(raw_prompt: str, use_llm=True) -> str:
-    cleaned = clean_text(raw_prompt)
-    keyword_form = to_keyword_style(cleaned)
+        results.append({
+            "act": row["act"],
+            "original": raw,
+            "optimized": optimized,
+            "original_tokens": before,
+            "optimized_tokens": after,
+            "savings": before - after
+        })
 
-    if use_llm:
-        optimizer = PromptOptimizer()
-        llm_refined = optimizer.llm_optimize(keyword_form)
-        return f"🧠 LLM-Optimized Prompt:\n\n{llm_refined}\n"
-    else:
-        return f"🧪 Rule-based Optimized Prompt:\n\n{keyword_form}\n"
+    return results
+
+def print_report(results):
+    print("\n=========== SUMMARY ===========\n")
+    print(f"Total prompts processed: {len(results)}")
+    total_saved = sum(r["savings"] for r in results)
+    print(f"Total tokens saved: {total_saved}")
+    print(f"Avg tokens saved per prompt: {round(total_saved / len(results), 2)}")
+
+    print("\n=========== SAMPLE OUTPUTS ===========\n")
+    for r in results[:5]:
+        print("\n--- ORIGINAL ---")
+        print(r["original"])
+        print("\n--- OPTIMIZED ---")
+        print(r["optimized"])
+        print("\n--- TOKENS ---")
+        print(f"{r['original_tokens']} -> {r['optimized_tokens']} (saved {r['savings']})")
+        print("\n=============================\n")
 
 
 if __name__ == "__main__":
-    raw = input("Enter your prompt:\n")
-    print("\n" + "=" * 40)
-    print(optimize_prompt(raw_prompt=raw))
-    print("=" * 40)
+    results = run_test(limit=10)  # test first 10 prompts; set to None for full dataset
+    print_report(results)
