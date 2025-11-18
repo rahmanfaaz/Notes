@@ -1,56 +1,271 @@
-import pandas as pd
-from enhanced_copilot_optimizer import optimize_prompt
+import streamlit as st
 
-def token_count(text):
-    return len(text.split())
+# ---------- BRAND CONSTANTS ----------
+LOGO_URL = "https://upload.wikimedia.org/wikipedia/en/3/34/State_Street_Corporation_logo.svg"
+APP_TITLE = "Snowflake SQL Validator"
+APP_TAGLINE = "SQL validation with Helm variable substitution"
 
-# Path to the CSV file you downloaded
-CSV_PATH = "prompts.csv"
+# ---------- THEME & LAYOUT INJECTION ----------
+st.markdown(
+    f"""
+    <style>
+        /* App background + base layout */
+        .stApp {{
+            background: radial-gradient(circle at top left, #F3F6FB 0, #F8FAFF 40%, #FFFFFF 100%);
+            color: #0F172A;
+        }}
 
-def run_test(limit=None):
-    df = pd.read_csv(CSV_PATH)
+        /* Main content width & spacing */
+        .block-container {{
+            max-width: 1180px;
+            padding-top: 1.5rem;
+            padding-bottom: 2rem;
+        }}
 
-    if limit:
-        df = df.head(limit)
+        /* Hide default footer text */
+        footer {{
+            visibility: hidden;
+            height: 0;
+        }}
 
-    results = []
+        /* ---------- HEADER ---------- */
+        [data-testid="stHeader"] {{
+            background: transparent;
+        }}
 
-    for idx, row in df.iterrows():
-        raw = row["prompt"]
-        optimized = optimize_prompt(raw)
+        .app-header-wrapper {{
+            padding: 8px 0 26px 0;
+            border-bottom: 1px solid #E2E8F0;
+            margin-bottom: 16px;
+        }}
 
-        before = token_count(raw)
-        after = token_count(optimized)
+        .app-header {{
+            display: flex;
+            align-items: center;
+            gap: 18px;
+        }}
 
-        results.append({
-            "act": row["act"],
-            "original": raw,
-            "optimized": optimized,
-            "original_tokens": before,
-            "optimized_tokens": after,
-            "savings": before - after
-        })
+        .app-header img {{
+            width: 170px;
+        }}
 
-    return results
+        .app-title-block {{
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }}
 
-def print_report(results):
-    print("\n=========== SUMMARY ===========\n")
-    print(f"Total prompts processed: {len(results)}")
-    total_saved = sum(r["savings"] for r in results)
-    print(f"Total tokens saved: {total_saved}")
-    print(f"Avg tokens saved per prompt: {round(total_saved / len(results), 2)}")
+        .app-title {{
+            font-size: 32px;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+            color: #0056A6;
+        }}
 
-    print("\n=========== SAMPLE OUTPUTS ===========\n")
-    for r in results[:5]:
-        print("\n--- ORIGINAL ---")
-        print(r["original"])
-        print("\n--- OPTIMIZED ---")
-        print(r["optimized"])
-        print("\n--- TOKENS ---")
-        print(f"{r['original_tokens']} -> {r['optimized_tokens']} (saved {r['savings']})")
-        print("\n=============================\n")
+        .app-subtitle {{
+            font-size: 14px;
+            font-weight: 400;
+            color: #64748B;
+        }}
 
+        /* ---------- CARDS ---------- */
+        .app-card {{
+            background-color: #FFFFFF;
+            border-radius: 14px;
+            padding: 18px 20px;
+            margin-bottom: 18px;
+            border: 1px solid #E2E8F0;
+            box-shadow: 0 14px 35px rgba(15, 23, 42, 0.06);
+        }}
 
-if __name__ == "__main__":
-    results = run_test(limit=10)  # test first 10 prompts; set to None for full dataset
-    print_report(results)
+        .app-card-header {{
+            font-size: 18px;
+            font-weight: 600;
+            color: #0056A6;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }}
+
+        .app-card-subtitle {{
+            font-size: 13px;
+            color: #64748B;
+            margin-bottom: 10px;
+        }}
+
+        /* ---------- FORM ELEMENTS ---------- */
+        div[data-testid="stTextInput"] > label,
+        div[data-testid="stTextArea"] > label,
+        div[data-testid="stSelectbox"] > label {{
+            font-weight: 500;
+            font-size: 13px;
+            color: #334155;
+        }}
+
+        div[data-testid="stTextInput"] input,
+        div[data-testid="stTextArea"] textarea,
+        div[data-testid="stSelectbox"] select {{
+            border-radius: 10px !important;
+            border: 1px solid #CBD5E1 !important;
+            box-shadow: 0 1px 2px rgba(148, 163, 184, 0.35);
+        }}
+
+        div[data-testid="stTextInput"] input:focus,
+        div[data-testid="stTextArea"] textarea:focus,
+        div[data-testid="stSelectbox"] select:focus {{
+            border-color: #0056A6 !important;
+            outline: none;
+            box-shadow: 0 0 0 1px rgba(0, 86, 166, 0.12);
+        }}
+
+        /* ---------- BUTTONS ---------- */
+        .stButton > button {{
+            border-radius: 999px;
+            padding: 0.4rem 1.6rem;
+            border: 1px solid #0056A6;
+            font-weight: 600;
+            letter-spacing: 0.02em;
+        }}
+
+        .stButton > button:hover {{
+            filter: brightness(1.03);
+            box-shadow: 0 8px 18px rgba(15, 23, 42, 0.18);
+        }}
+
+        /* Primary button (PROCESS) – you can keep your current colour logic
+           or let theme primaryColor control it */
+        .stButton > button:first-child {{
+            background-color: #0056A6 !important;
+            color: #FFFFFF !important;
+        }}
+
+        /* Secondary button (RESET) */
+        .stButton > button:nth-child(2) {{
+            background-color: #FFFFFF !important;
+            color: #0056A6 !important;
+        }}
+
+        /* ---------- TOGGLE / TAGS BAR (Path / Upload / Light / Dark etc.) ---------- */
+        .top-toggle-row {{
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+            font-size: 13px;
+        }}
+
+        .toggle-left, .toggle-right {{
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }}
+
+        .pill {{
+            padding: 2px 10px;
+            border-radius: 999px;
+            border: 1px solid #E2E8F0;
+            background: #FFFFFF;
+            font-size: 12px;
+            color: #475569;
+        }}
+
+        .pill-dot {{
+            width: 8px;
+            height: 8px;
+            border-radius: 999px;
+            display: inline-block;
+            margin-right: 4px;
+        }}
+
+        .pill-dot.red {{ background-color: #F97373; }}
+        .pill-dot.yellow {{ background-color: #FACC15; }}
+        .pill-dot.black {{ background-color: #0F172A; }}
+
+        /* ---------- FOOTER ---------- */
+        .app-footer {{
+            text-align: center;
+            color: #64748B;
+            font-size: 13px;
+            padding: 32px 0 12px 0;
+        }}
+    </style>
+
+    <div class="app-header-wrapper">
+        <div class="app-header">
+            <img src="{LOGO_URL}">
+            <div class="app-title-block">
+                <div class="app-title">{APP_TITLE}</div>
+                <div class="app-subtitle">{APP_TAGLINE}</div>
+            </div>
+        </div>
+    </div>
+    """,
+    unsafe_allow_html=True
+)
+3️⃣ Example: wrap your sections in cards + top toggle row
+
+Right after the theme block above, you can structure the page like this (adapt to your existing widgets):
+
+# ---------- TOP TOGGLE BAR (Path / Upload + Light/Dark indicators) ----------
+st.markdown(
+    """
+    <div class="top-toggle-row">
+        <div class="toggle-left">
+            <span class="pill"><span class="pill-dot red"></span>Path</span>
+            <span class="pill"><span class="pill-dot yellow"></span>Upload</span>
+        </div>
+        <div class="toggle-right">
+            <span class="pill"><span class="pill-dot black"></span>Light</span>
+            <span class="pill"><span class="pill-dot"></span>Dark</span>
+        </div>
+    </div>
+    """,
+    unsafe_allow_html=True
+)
+
+# ---------- MAIN INPUT CARD ----------
+st.markdown('<div class="app-card">', unsafe_allow_html=True)
+col1, col2, col3, col4 = st.columns([2.2, 2.2, 1.6, 2.0])
+
+with col1:
+    helm_path = st.text_input("Helm:", placeholder="values-file or chart path")
+
+with col2:
+    sql_path = st.text_input("SQL:", placeholder="single script or dir")
+
+with col3:
+    env = st.selectbox("Environment:", ["DEV", "QA", "UAT", "PROD"])
+
+with col4:
+    user_email = st.text_input("Owner email:", placeholder="name@statestreet.com")
+
+st.markdown('</div>', unsafe_allow_html=True)
+
+# ---------- VALIDATOR CARD ----------
+st.markdown('<div class="app-card">', unsafe_allow_html=True)
+st.markdown(
+    '<div class="app-card-header">❄️ Validator</div>'
+    '<div class="app-card-subtitle">SQL validation with Helm variable substitution</div>',
+    unsafe_allow_html=True
+)
+
+c1, c2, c3 = st.columns([1.2, 1.2, 2.0])
+with c1:
+    process = st.button("PROCESS")
+with c2:
+    reset = st.button("RESET")
+with c3:
+    st.caption("Select files → Process → Validate")
+
+st.markdown('</div>', unsafe_allow_html=True)
+
+# ---------- FOOTER ----------
+st.markdown(
+    """
+    <div class="app-footer">
+        Snowflake SQL Validator © 2025 | State Street
+    </div>
+    """,
+    unsafe_allow_html=True
+)
