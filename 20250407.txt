@@ -1,38 +1,4 @@
-/* ===========================
-   CUSTOM FONT (La Antigua)
-=========================== */
-
-@font-face {
-    font-family: 'LaAntigua';
-    src: url(data:font/ttf;base64,{font_base64}) format('truetype');
-    font-weight: normal;
-    font-style: normal;
-}
-
-
-/* Title container next to logo */
-.top-title-container {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    margin-left: 18px;
-}
-
-/* Main title */
-.top-title {
-    font-family: 'LaAntigua', sans-serif;
-    font-size: 22px;
-    font-weight: 700;
-    color: white;
-    line-height: 1.1;
-}
-
-/* Subtitle */
-.top-subtitle {
-    font-family: 'LaAntigua', sans-serif;
-    font-size: 13px;
-    font-weight: 300;
-    color: #e8e8e8;
-    margin-top: 2px;
-    line-height: 1.1;
-}
+    <div class="top-title-container">
+        <div class="top-title">Snowflake SQL Validator</div>
+        <div class="top-subtitle">SQL validation with Helm variable substitution</div>
+    </div>
