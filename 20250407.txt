@@ -1,25 +1,6 @@
-/* Move ENV + USER into the blue bar */
-#top-env-user-wrapper {
-    position: absolute !important;
-    top: 10px !important;
-    right: 20px !important;
-    z-index: 9999 !important;
-    display: flex !important;
-    gap: 14px !important;
-}
-
-/* Reduce size of widgets */
-#top-env-user-wrapper .stSelectbox, 
-#top-env-user-wrapper .stTextInput {
-    width: 170px !important;
-}
-
-/* Remove the blank layout space they originally created */
-#top-env-user-wrapper + div {
+/* Remove the block that contains the old location of the ENV/USER components */
+div[data-testid="stColumn"] 
+    > div[data-testid="stVerticalBlockBorderWrapper"] 
+    > div[data-testid="stVerticalBlock"] {
     display: none !important;
-}
-
-/* Optional: reduce top padding globally */
-.block-container {
-    padding-top: 0 !important;
 }
