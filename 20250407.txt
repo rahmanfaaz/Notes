@@ -1,6 +1,4 @@
-/* Remove the block that contains the old location of the ENV/USER components */
-div[data-testid="stColumn"] 
-    > div[data-testid="stVerticalBlockBorderWrapper"] 
-    > div[data-testid="stVerticalBlock"] {
+div[data-testid="stColumn"]:nth-child(3)
+    > div[data-testid="stVerticalBlockBorderWrapper"] {
     display: none !important;
 }
