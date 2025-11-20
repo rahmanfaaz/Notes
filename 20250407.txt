@@ -1,130 +1,38 @@
-def apply_full_css(logo_base64: str = ""):
-    st.markdown(f"""
-    <style>
+/* ===========================
+   CUSTOM FONT (La Antigua)
+=========================== */
 
-    /* ===========================
-       Base Layout Fixes
-       =========================== */
-
-    html, body, [data-testid="stAppViewContainer"], [data-testid="stApp"] {{
-        height: 100%;
-        margin: 0;
-        padding: 0;
-    }}
-
-    /* Flex layout for sticky footer */
-    [data-testid="stAppViewContainer"] {{
-        display: flex;
-        flex-direction: column;
-        padding-top: 75px !important;   /* Push content below header */
-        padding-bottom: 70px !important; /* Push content above footer */
-    }}
-
-    .main {{
-        flex: 1 0 auto;
-        margin: 0 !important;
-        padding: 0 !important;
-        max-width: 100% !important;
-    }}
+@font-face {
+    font-family: 'LaAntigua';
+    src: url(data:font/ttf;base64,{font_base64}) format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
 
 
-    /* ===========================
-       Hide Streamlit Default UI
-       =========================== */
+/* Title container next to logo */
+.top-title-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    margin-left: 18px;
+}
 
-    #MainMenu {{ visibility: hidden; }}
-    header {{ visibility: hidden; }}
-    footer {{ visibility: hidden; }}
-    #stDeployButton {{ display: none; }}
+/* Main title */
+.top-title {
+    font-family: 'LaAntigua', sans-serif;
+    font-size: 22px;
+    font-weight: 700;
+    color: white;
+    line-height: 1.1;
+}
 
-
-    /* ===========================
-       TOP NAVBAR (State Street Blue)
-       =========================== */
-
-    .top-blue-bar {{
-        background-color: #0058ff;     /* State Street Blue */
-        height: 60px;
-        width: 100%;
-        display: flex;
-        align-items: center;
-        padding-left: 25px;
-        padding-right: 25px;
-        position: fixed;
-        top: 0;
-        left: 0;
-        z-index: 9999;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-    }}
-
-    .top-logo {{
-        height: 34px;
-    }}
-
-
-    /* ===========================
-       Sticky Footer Styling
-       =========================== */
-
-    .custom-footer {{
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        width: 100%;
-        height: 55px;
-
-        background: white;
-        border-top: 1px solid #e0e0e0;
-
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-
-        padding: 0 25px;
-        z-index: 9999;
-    }}
-
-    .footer-left {{
-        font-size: 14px;
-        color: #666;
-    }}
-
-    .footer-right {{
-        display: flex;
-        justify-content: flex-end;
-        align-items: center;
-    }}
-
-    .footer-logo {{
-        height: 40px;
-    }}
-
-    </style>
-    """, unsafe_allow_html=True)
-
-
-
-from pathlib import Path
-import base64
-
-path = Path("static/state_street_logo.png")
-STATE_STREET_LOGO_BASE64 = base64.b64encode(path.read_bytes()).decode()
-
-st.markdown(f"""
-<div class="top-blue-bar">
-    <img src="data:image/png;base64,{STATE_STREET_LOGO_BASE64}" class="top-logo">
-</div>
-""", unsafe_allow_html=True)
-
-
-
-st.markdown(f"""
-<div class="custom-footer">
-    <div class="footer-left">
-        Snowflake SQL Validator © 2025 | State Street
-    </div>
-    <div class="footer-right">
-        <img src="data:image/png;base64,{STATE_STREET_LOGO_BASE64}" class="footer-logo">
-    </div>
-</div>
-""", unsafe_allow_html=True)
+/* Subtitle */
+.top-subtitle {
+    font-family: 'LaAntigua', sans-serif;
+    font-size: 13px;
+    font-weight: 300;
+    color: #e8e8e8;
+    margin-top: 2px;
+    line-height: 1.1;
+}
