@@ -1,4 +1,79 @@
-    <div class="top-title-container">
-        <div class="top-title">Snowflake SQL Validator</div>
-        <div class="top-subtitle">SQL validation with Helm variable substitution</div>
-    </div>
+# ================= HEADER =================
+
+col_header = st.columns([0.1, 0.65, 0.25])
+
+# LEFT: Logo
+with col_header[0]:
+    try:
+        if LOGO_PATH.exists():
+            st.image(str(LOGO_PATH), width=100)
+        else:
+            st.markdown("<div style='font-size: 50px; text-align: center;'>❄️</div>", unsafe_allow_html=True)
+    except:
+        st.markdown("<div style='font-size: 50px; text-align: center;'>❄️</div>", unsafe_allow_html=True)
+
+# MIDDLE: Title + tagline
+with col_header[1]:
+    st.markdown(
+        f"""
+        <div class="app-header">
+            <div class="app-title">{APP_TITLE}</div>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+# RIGHT: Environment + User
+with col_header[2]:
+    st.markdown("<div class='top-controls'>", unsafe_allow_html=True)
+
+    col_env, col_user = st.columns(2)
+
+    with col_env:
+        top_env = st.selectbox(
+            "Env:",
+            ["DEV", "QAA", "UAT", "BUAT", "PROD"],
+            label_visibility="collapsed",
+            key="top_env",
+        )
+
+    with col_user:
+        top_user = st.text_input(
+            "User:",
+            value="knaskar@statestreet.com",
+            placeholder="username",
+            label_visibility="collapsed",
+            key="top_user",
+        )
+
+    st.markdown("</div>", unsafe_allow_html=True)
+
+st.markdown("---")
+
+
+
+/* ===== Move top_env & top_user into BLUE BAR ===== */
+.top-controls {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 10px;
+    margin-top: -65px;   /* pulls elements UP into the blue header */
+    margin-right: 10px;  /* aligns with right edge */
+}
+
+/* Shrink the widgets to fit nicely */
+div[data-baseweb="select"] {
+    margin-top: 0px !important;
+}
+
+input[type="text"] {
+    height: 32px !important;
+    padding: 4px 8px !important;
+    font-size: 13px !important;
+}
+
+/* Ensure blue bar content overlaps correctly */
+.block-container {
+    padding-top: 0 !important;
+}
