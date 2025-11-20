@@ -1,28 +1,25 @@
-/* Position the right-side controls inside the blue bar */
+/* Right side alignment */
 .top-right-controls {
     margin-left: auto;
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 14px;
 }
 
-/* Make Streamlit widgets shrink + align */
-#env-placeholder .stSelectbox, 
-#user-placeholder .stTextInput {
+/* Placeholder width (controls widget size) */
+#env-slot, #user-slot {
+    width: 180px;
+}
+
+/* Make widgets shrink inside the bar */
+#env-slot .stSelectbox > div,
+#user-slot .stTextInput > div {
     margin-top: 0 !important;
 }
 
-/* Inputs themselves */
-#env-placeholder select,
-#user-placeholder input {
+#env-slot select, 
+#user-slot input {
     height: 32px !important;
     padding: 4px 8px !important;
     font-size: 13px !important;
-}
-
-/* Remove unwanted white-block around widgets */
-#env-placeholder, 
-#user-placeholder {
-    display: flex;
-    align-items: center;
 }
